@@ -1,6 +1,4 @@
-tanks
+chimera
 ======
 
-Multiplayer tank game developed in nodejs.
-
-Play it [here](https://rubentd-tanks.herokuapp.com/)
+group performance project for lmc 3314, gatech summer 2017
