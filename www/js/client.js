@@ -3,55 +3,55 @@ var HEIGHT = 580;
 // This IP is hardcoded to my server, replace with your own
 var socket = io.connect('localhost:8082');
 var game = new Game('#arena', WIDTH, HEIGHT, socket);
-var selectedTank = 1;
-var tankName = '';
+var selectedTurtle = 1;
+var turtleName = '';
 
-socket.on('addTank', function(tank){
-	game.addTank(tank.id, tank.type, tank.isLocal, tank.x, tank.y);
+socket.on('addTurtle', function(turtle){
+	game.addTurtle(turtle.id, turtle.type, turtle.isLocal, turtle.x, turtle.y);
 });
 
 socket.on('sync', function(gameServerData){
 	game.receiveData(gameServerData);
 });
 
-socket.on('killTank', function(tankData){
-	game.killTank(tankData);
+socket.on('killTurtle', function(turtleData){
+	game.killTurtle(turtleData);
 });
 
-socket.on('removeTank', function(tankId){
-	game.removeTank(tankId);
+socket.on('removeTurtle', function(turtleId){
+	game.removeTurtle(turtleId);
 });
 
 $(document).ready( function(){
 
 	$('#join').click( function(){
-		tankName = $('#tank-name').val();
-		joinGame(tankName, selectedTank, socket);
+		turtleName = $('#turtle-name').val();
+		joinGame(turtleName, selectedTurtle, socket);
 	});
 
-	$('#tank-name').keyup( function(e){
-		tankName = $('#tank-name').val();
+	$('#turtle-name').keyup( function(e){
+		turtleName = $('#turtle-name').val();
 		var k = e.keyCode || e.which;
 		if(k == 13){
-			joinGame(tankName, selectedTank, socket);
+			joinGame(turtleName, selectedTurtle, socket);
 		}
 	});
 
-	$('ul.tank-selection li').click( function(){
-		$('.tank-selection li').removeClass('selected')
+	$('ul.turtle-selection li').click( function(){
+		$('.turtle-selection li').removeClass('selected')
 		$(this).addClass('selected');
-		selectedTank = $(this).data('tank');
+		selectedTurtle = $(this).data('turtle');
 	});
 
 });
 
 $(window).on('beforeunload', function(){
-	socket.emit('leaveGame', tankName);
+	socket.emit('leaveGame', turtleName);
 });
 
-function joinGame(tankName, tankType, socket){
-	if(tankName != ''){
+function joinGame(turtleName, turtleType, socket){
+	if(turtleName != ''){
 		$('#prompt').hide();
-		socket.emit('joinGame', {id: tankName, type: tankType});
+		socket.emit('joinGame', {id: turtleName, type: turtleType});
 	}
 }

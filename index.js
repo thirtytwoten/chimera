@@ -17,34 +17,34 @@ var server = app.listen(process.env.PORT || 8082, function () {
 var io = require('socket.io')(server);
 
 function GameServer(){
-	this.tanks = [];
+	this.turtles = [];
 	this.balls = [];
 	this.lastBallId = 0;
 }
 
 GameServer.prototype = {
 
-	addTank: function(tank){
-		this.tanks.push(tank);
+	addTurtle: function(turtle){
+		this.turtles.push(turtle);
 	},
 
 	addBall: function(ball){
 		this.balls.push(ball);
 	},
 
-	removeTank: function(tankId){
-		//Remove tank object
-		this.tanks = this.tanks.filter( function(t){return t.id != tankId} );
+	removeTurtle: function(turtleId){
+		//Remove turtle object
+		this.turtles = this.turtles.filter( function(t){return t.id != turtleId} );
 	},
 
-	//Sync tank with new data received from a client
-	syncTank: function(newTankData){
-		this.tanks.forEach( function(tank){
-			if(tank.id == newTankData.id){
-				tank.x = newTankData.x;
-				tank.y = newTankData.y;
-				tank.baseAngle = newTankData.baseAngle;
-				tank.cannonAngle = newTankData.cannonAngle;
+	//Sync turtle with new data received from a client
+	syncTurtle: function(newTurtleData){
+		this.turtles.forEach( function(turtle){
+			if(turtle.id == newTurtleData.id){
+				turtle.x = newTurtleData.x;
+				turtle.y = newTurtleData.y;
+				turtle.baseAngle = newTurtleData.baseAngle;
+				turtle.cannonAngle = newTurtleData.cannonAngle;
 			}
 		});
 	},
@@ -65,36 +65,36 @@ GameServer.prototype = {
 		});
 	},
 
-	//Detect if ball collides with any tank
+	//Detect if ball collides with any turtle
 	detectCollision: function(ball){
 		var self = this;
 
-		this.tanks.forEach( function(tank){
-			if(tank.id != ball.ownerId
-				&& Math.abs(tank.x - ball.x) < 30
-				&& Math.abs(tank.y - ball.y) < 30){
-				//Hit tank
-				self.hurtTank(tank);
+		this.turtles.forEach( function(turtle){
+			if(turtle.id != ball.ownerId
+				&& Math.abs(turtle.x - ball.x) < 30
+				&& Math.abs(turtle.y - ball.y) < 30){
+				//Hit turtle
+				self.hurtTurtle(turtle);
 				ball.out = true;
 				ball.exploding = true;
 			}
 		});
 	},
 
-	hurtTank: function(tank){
-		tank.hp -= 2;
+	hurtTurtle: function(turtle){
+		turtle.hp -= 2;
 	},
 
 	getData: function(){
 		var gameData = {};
-		gameData.tanks = this.tanks;
+		gameData.turtles = this.turtles;
 		gameData.balls = this.balls;
 
 		return gameData;
 	},
 
-	cleanDeadTanks: function(){
-		this.tanks = this.tanks.filter(function(t){
+	cleanDeadTurtles: function(){
+		this.turtles = this.turtles.filter(function(t){
 			return t.hp > 0;
 		});
 	},
@@ -121,20 +121,20 @@ var game = new GameServer();
 io.on('connection', function(client) {
 	console.log('User connected');
 
-	client.on('joinGame', function(tank){
-		console.log(tank.id + ' joined the game');
+	client.on('joinGame', function(turtle){
+		console.log(turtle.id + ' joined the game');
 		var initX = getRandomInt(40, 900);
 		var initY = getRandomInt(40, 500);
-		client.emit('addTank', { id: tank.id, type: tank.type, isLocal: true, x: initX, y: initY, hp: TANK_INIT_HP });
-		client.broadcast.emit('addTank', { id: tank.id, type: tank.type, isLocal: false, x: initX, y: initY, hp: TANK_INIT_HP} );
+		client.emit('addTurtle', { id: turtle.id, type: turtle.type, isLocal: true, x: initX, y: initY, hp: TANK_INIT_HP });
+		client.broadcast.emit('addTurtle', { id: turtle.id, type: turtle.type, isLocal: false, x: initX, y: initY, hp: TANK_INIT_HP} );
 
-		game.addTank({ id: tank.id, type: tank.type, hp: TANK_INIT_HP});
+		game.addTurtle({ id: turtle.id, type: turtle.type, hp: TANK_INIT_HP});
 	});
 
 	client.on('sync', function(data){
 		//Receive data from clients
-		if(data.tank != undefined){
-			game.syncTank(data.tank);
+		if(data.turtle != undefined){
+			game.syncTurtle(data.turtle);
 		}
 		//update ball positions
 		game.syncBalls();
@@ -143,8 +143,8 @@ io.on('connection', function(client) {
 		client.broadcast.emit('sync', game.getData());
 
 		//I do the cleanup after sending data, so the clients know
-		//when the tank dies and when the balls explode
-		game.cleanDeadTanks();
+		//when the turtle dies and when the balls explode
+		game.cleanDeadTurtles();
 		game.cleanDeadBalls();
 		counter ++;
 	});
@@ -154,10 +154,10 @@ io.on('connection', function(client) {
 		game.addBall(ball);
 	});
 
-	client.on('leaveGame', function(tankId){
-		console.log(tankId + ' has left the game');
-		game.removeTank(tankId);
-		client.broadcast.emit('removeTank', tankId);
+	client.on('leaveGame', function(turtleId){
+		console.log(turtleId + ' has left the game');
+		game.removeTurtle(turtleId);
+		client.broadcast.emit('removeTurtle', turtleId);
 	});
 
 });
@@ -175,7 +175,7 @@ function Ball(ownerId, alpha, x, y){
 Ball.prototype = {
 
 	fly: function(){
-		//move to trayectory
+		//move to trajectory
 		var speedX = BALL_SPEED * Math.sin(this.alpha);
 		var speedY = -BALL_SPEED * Math.cos(this.alpha);
 		this.x += speedX;

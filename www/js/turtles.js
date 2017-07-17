@@ -4,8 +4,8 @@ var ROTATION_SPEED = 5;
 var ARENA_MARGIN = 30;
 
 function Game(arenaId, w, h, socket){
-	this.tanks = []; //Tanks (other than the local tank)
-	this.balls = [];
+	this.turtles = []; //Turtles (other than the local turtle)
+	//this.balls = [];
 	this.width = w;
 	this.height = h;
 	this.$arena = $(arenaId);
@@ -21,43 +21,43 @@ function Game(arenaId, w, h, socket){
 
 Game.prototype = {
 
-	addTank: function(id, type, isLocal, x, y, hp){
-		var t = new Tank(id, type, this.$arena, this, isLocal, x, y, hp);
+	addTurtle: function(id, type, isLocal, x, y, hp){
+		var t = new Turtle(id, type, this.$arena, this, isLocal, x, y, hp);
 		if(isLocal){
-			this.localTank = t;
+			this.localTurtle = t;
 		}else{
-			this.tanks.push(t);
+			this.turtles.push(t);
 		}
 	},
 
-	removeTank: function(tankId){
-		//Remove tank object
-		this.tanks = this.tanks.filter( function(t){return t.id != tankId} );
-		//remove tank from dom
-		$('#' + tankId).remove();
-		$('#info-' + tankId).remove();
+	removeTurtle: function(turtleId){
+		//Remove turtle object
+		this.turtles = this.turtles.filter( function(t){return t.id != turtleId} );
+		//remove turtle from dom
+		$('#' + turtleId).remove();
+		$('#info-' + turtleId).remove();
 	},
 
-	killTank: function(tank){
-		tank.dead = true;
-		this.removeTank(tank.id);
+	killTurtle: function(turtle){
+		turtle.dead = true;
+		this.removeTurtle(turtle.id);
 		//place explosion
-		this.$arena.append('<img id="expl' + tank.id + '" class="explosion" src="./img/explosion.gif">');
-		$('#expl' + tank.id).css('left', (tank.x - 50)  + 'px');
-		$('#expl' + tank.id).css('top', (tank.y - 100)  + 'px');
+		this.$arena.append('<img id="expl' + turtle.id + '" class="explosion" src="./img/explosion.gif">');
+		$('#expl' + turtle.id).css('left', (turtle.x - 50)  + 'px');
+		$('#expl' + turtle.id).css('top', (turtle.y - 100)  + 'px');
 
 		setTimeout(function(){
-			$('#expl' + tank.id).remove();
+			$('#expl' + turtle.id).remove();
 		}, 1000);
 
 	},
 
 	mainLoop: function(){
-		if(this.localTank != undefined){
-			//send data to server about local tank
+		if(this.localTurtle != undefined){
+			//send data to server about local turtle
 			this.sendData();
-			//move local tank
-			this.localTank.move();
+			//move local turtle
+			this.localTurtle.move();
 		}
 	},
 
@@ -65,15 +65,15 @@ Game.prototype = {
 		//Send local data to server
 		var gameData = {};
 
-		//Send tank data
+		//Send turtle data
 		var t = {
-			id: this.localTank.id,
-			x: this.localTank.x,
-			y: this.localTank.y,
-			baseAngle: this.localTank.baseAngle,
-			cannonAngle: this.localTank.cannonAngle
+			id: this.localTurtle.id,
+			x: this.localTurtle.x,
+			y: this.localTurtle.y,
+			baseAngle: this.localTurtle.baseAngle,
+			cannonAngle: this.localTurtle.cannonAngle
 		};
-		gameData.tank = t;
+		gameData.turtle = t;
 		//Client game does not send any info about balls,
 		//the server controls that part
 		this.socket.emit('sync', gameData);
@@ -82,37 +82,37 @@ Game.prototype = {
 	receiveData: function(serverData){
 		var game = this;
 
-		serverData.tanks.forEach( function(serverTank){
+		serverData.turtles.forEach( function(serverTurtle){
 
-			//Update local tank stats
-			if(game.localTank !== undefined && serverTank.id == game.localTank.id){
-				game.localTank.hp = serverTank.hp;
-				if(game.localTank.hp <= 0){
-					game.killTank(game.localTank);
+			//Update local turtle stats
+			if(game.localTurtle !== undefined && serverTurtle.id == game.localTurtle.id){
+				game.localTurtle.hp = serverTurtle.hp;
+				if(game.localTurtle.hp <= 0){
+					game.killTurtle(game.localTurtle);
 				}
 			}
 
-			//Update foreign tanks
+			//Update foreign turtles
 			var found = false;
-			game.tanks.forEach( function(clientTank){
-				//update foreign tanks
-				if(clientTank.id == serverTank.id){
-					clientTank.x = serverTank.x;
-					clientTank.y = serverTank.y;
-					clientTank.baseAngle = serverTank.baseAngle;
-					clientTank.cannonAngle = serverTank.cannonAngle;
-					clientTank.hp = serverTank.hp;
-					if(clientTank.hp <= 0){
-						game.killTank(clientTank);
+			game.turtles.forEach( function(clientTurtle){
+				//update foreign turtles
+				if(clientTurtle.id == serverTurtle.id){
+					clientTurtle.x = serverTurtle.x;
+					clientTurtle.y = serverTurtle.y;
+					clientTurtle.baseAngle = serverTurtle.baseAngle;
+					clientTurtle.cannonAngle = serverTurtle.cannonAngle;
+					clientTurtle.hp = serverTurtle.hp;
+					if(clientTurtle.hp <= 0){
+						game.killTurtle(clientTurtle);
 					}
-					clientTank.refresh();
+					clientTurtle.refresh();
 					found = true;
 				}
 			});
 			if(!found &&
-				(game.localTank == undefined || serverTank.id != game.localTank.id)){
+				(game.localTurtle == undefined || serverTurtle.id != game.localTurtle.id)){
 				//I need to create it
-				game.addTank(serverTank.id, serverTank.type, false, serverTank.x, serverTank.y, serverTank.hp);
+				game.addTurtle(serverTurtle.id, serverTurtle.type, false, serverTurtle.x, serverTurtle.y, serverTurtle.hp);
 			}
 		});
 
@@ -163,7 +163,7 @@ Ball.prototype = {
 
 }
 
-function Tank(id, type, $arena, game, isLocal, x, y, hp){
+function Turtle(id, type, $arena, game, isLocal, x, y, hp){
 	this.id = id;
 	this.type = type;
 	this.speed = 5;
@@ -192,10 +192,10 @@ function Tank(id, type, $arena, game, isLocal, x, y, hp){
 	this.materialize();
 }
 
-Tank.prototype = {
+Turtle.prototype = {
 
 	materialize: function(){
-		this.$arena.append('<div id="' + this.id + '" class="tank tank' + this.type + '"></div>');
+		this.$arena.append('<div id="' + this.id + '" class="turtle turtle' + this.type + '"></div>');
 		this.$body = $('#' + this.id);
 		this.$body.css('width', this.w);
 		this.$body.css('height', this.h);
@@ -205,7 +205,7 @@ Tank.prototype = {
 		this.$body.css('-o-transform', 'rotateZ(' + this.baseAngle + 'deg)');
 		this.$body.css('transform', 'rotateZ(' + this.baseAngle + 'deg)');
 
-		this.$body.append('<div id="cannon-' + this.id + '" class="tank-cannon"></div>');
+		this.$body.append('<div id="cannon-' + this.id + '" class="turtle-cannon"></div>');
 		this.$cannon = $('#cannon-' + this.id);
 
 		this.$arena.append('<div id="info-' + this.id + '" class="info"></div>');
@@ -331,7 +331,7 @@ Tank.prototype = {
 		this.refresh();
 	},
 
-	/* Rotate base of tank to match movement direction */
+	/* Rotate base of turtle to match movement direction */
 	rotateBase: function(){
 		if((this.dir.up && this.dir.left)
 			|| (this.dir.down && this.dir.right)){ //diagonal "left"
@@ -408,9 +408,9 @@ Tank.prototype = {
 	},
 
 	setCannonAngle: function(){
-		var tank = { x: this.x , y: this.y};
-		var deltaX = this.mx - tank.x;
-		var deltaY = this.my - tank.y;
+		var turtle = { x: this.x , y: this.y};
+		var deltaX = this.mx - turtle.x;
+		var deltaY = this.my - turtle.y;
 		this.cannonAngle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
 		this.cannonAngle += 90;
 	},

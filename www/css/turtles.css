@@ -22,7 +22,7 @@ body{
 	pointer-events: none;
 }
 
-.tank{
+.turtle{
 	position: absolute;
 	background-repeat: no-repeat;
 	background-position: -10px 0;
@@ -35,7 +35,7 @@ body{
 	z-index: 99;
 }
 
-.tank-cannon{
+.turtle-cannon{
 	position: absolute;
 	top: -25px;
 	width: 60px;
@@ -120,7 +120,7 @@ body{
 	opacity: .3;
 }
 
-.tank-selection{
+.turtle-selection{
 	display: inline-block;
 	width: 350px;
 	padding: 0;
@@ -128,14 +128,14 @@ body{
 	margin: 20px auto 0 auto;
 }
 
-.tank-select label{
+.turtle-select label{
 	display: inline-block;
 	margin: 10px 0;
 	width: 100%;
 	text-align: center;
 }
 
-.tank-selection li{
+.turtle-selection li{
 	display: inline-block;
 	float: left;
 	width: 33%;
@@ -145,7 +145,7 @@ body{
 	padding: 10px 0;
 }
 
-.tank-selection li.selected{
+.turtle-selection li.selected{
 	border: 2px solid #158cba;
 	-webkit-border-radius: 5px;
 	   -moz-border-radius: 5px;
@@ -155,14 +155,14 @@ body{
 }
 
 /* skins */
-.tank1{
+.turtle1{
 	background-image: url(../img/tank-1-base.png);
 }
 
-.tank2{
+.turtle2{
 	background-image: url(../img/tank-2-base.png);
 }
 
-.tank3{
+.turtle3{
 	background-image: url(../img/tank-3-base.png);
 }
