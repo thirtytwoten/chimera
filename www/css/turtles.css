@@ -34,9 +34,9 @@ body{
 	height: 38px;
 	background-image: url(../img/fingerling.png);
 	-webkit-transform-origin: 7px 38px;
-	   -moz-transform-origin: 7px 38px;
-		 -o-transform-origin: 7px 38px;
-			transform-origin: 7px 38px;
+	-moz-transform-origin: 7px 38px;
+	-o-transform-origin: 7px 38px;
+	transform-origin: 7px 38px;
 }
 
 .big-fin{
@@ -44,10 +44,10 @@ body{
 	width: 100px;
 	height: 266px;
 	background-image: url(../img/bigFin.png);
-/*	-webkit-transform-origin: 7px 38px;
-	   -moz-transform-origin: 7px 38px;
-		 -o-transform-origin: 7px 38px;
-			transform-origin: 7px 38px;*/
+	-webkit-transform-origin: 50px 266px;
+	-moz-transform-origin: 50px 266px;
+	-o-transform-origin: 50px 266px;
+	transform-origin: 50px 266px;
 }
 
 .fin-tl{
