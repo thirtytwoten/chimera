@@ -48,6 +48,35 @@ body{
 			transform-origin: 30px 65px;
 }
 
+.fin{
+	position: absolute;
+	width: 15px;
+	height: 38px;
+	background-image: url(../img/fingerling.png);
+	-webkit-transform-origin: 7px 38px;
+	   -moz-transform-origin: 7px 38px;
+		 -o-transform-origin: 7px 38px;
+			transform-origin: 7px 38px;
+}
+
+.fin-tl{
+	top: -25px;
+}
+
+.fin-tr{
+	top: -25px;
+	right: 0px;
+}
+
+.fin-bl{
+	top: 25px;
+}
+
+.fin-br{
+	top: 25px;
+	right: 0px;
+}
+
 .cannon-ball{
 	position: absolute;
 	width: 10px;
@@ -156,13 +185,5 @@ body{
 
 /* skins */
 .turtle1{
-	background-image: url(../img/tank-1-base.png);
-}
-
-.turtle2{
-	background-image: url(../img/tank-2-base.png);
-}
-
-.turtle3{
-	background-image: url(../img/tank-3-base.png);
+	background-image: url(../img/turtle-base.png);
 }

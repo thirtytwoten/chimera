@@ -208,6 +208,18 @@ Turtle.prototype = {
 		this.$body.append('<div id="cannon-' + this.id + '" class="turtle-cannon"></div>');
 		this.$cannon = $('#cannon-' + this.id);
 
+		this.$body.append('<div id="fin-' + 'tl-' + this.id + '" class="fin fin-tl"></div>');
+		this.$cannon = $('#fin-' + 'tl-' + this.id);
+
+		this.$body.append('<div id="fin-' + 'tr-' + this.id + '" class="fin fin-tr"></div>');
+		this.$cannon = $('#fin-' + 'tr-' + this.id);
+
+		this.$body.append('<div id="fin-' + 'bl-' + this.id + '" class="fin fin-bl"></div>');
+		this.$cannon = $('#fin-' + 'bl-' + this.id);
+
+		this.$body.append('<div id="fin-' + 'br-' + this.id + '" class="fin fin-br"></div>');
+		this.$cannon = $('#fin-' + 'br-' + this.id);
+
 		this.$arena.append('<div id="info-' + this.id + '" class="info"></div>');
 		this.$info = $('#info-' + this.id);
 		this.$info.append('<div class="label">' + this.id + '</div>');
