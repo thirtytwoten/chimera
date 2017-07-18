@@ -25,16 +25,17 @@
 </head>
 <body>
   <div id="pool" class="pool"></div>
+  <div id="prompt" class="name-prompt">
+    <div class="input-group">
+        <input id="finger-name" type="text" class="form-control" placeholder="your name" autocomplete="off">
+        <span class="input-group-btn">
+          <input id="join" class="btn btn-primary" type="submit" value="Join the turtle">
+        </span>
+      </div>
+  </div>
   <script type="text/javascript" src="js/jquery.min.js"></script>
   <script type="text/javascript" src="js/socket.io.js"></script>
   <script type="text/javascript" src="js/turtles.js"></script>
   <script type="text/javascript" src="js/client.js"></script>
-  <script type="text/javascript">
-    var WIDTH = 1000;
-    var HEIGHT = 600;
-    var socket = io.connect('localhost:8082');
-    var game = new Game('#pool', WIDTH, HEIGHT, socket);
-    game.addTurtle(1,1,true,100,100);
-  </script>
 </body>
 </html>

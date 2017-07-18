@@ -17,28 +17,26 @@ var server = app.listen(process.env.PORT || 8082, function () {
 var io = require('socket.io')(server);
 
 function GameServer(){
-	this.turtles = [];
+	this.fingers = [];
 }
 
 GameServer.prototype = {
 
-	addTurtle: function(turtle){
-		this.turtles.push(turtle);
+	addFinger: function(finger){
+		this.fingers.push(finger);
 	},
 
-	removeTurtle: function(turtleId){
-		//Remove turtle object
-		this.turtles = this.turtles.filter( function(t){return t.id != turtleId} );
+	removeFinger: function(fingerName){
+		//Remove finger object
+		this.fingers = this.fingers.filter( function(f){return f.name != fingerName} );
 	},
 
-	//Sync turtle with new data received from a client
-	syncTurtle: function(newTurtleData){
-		this.turtles.forEach( function(turtle){
-			if(turtle.id == newTurtleData.id){
-				turtle.x = newTurtleData.x;
-				turtle.y = newTurtleData.y;
-				turtle.baseAngle = newTurtleData.baseAngle;
-				turtle.finAngle = newTurtleData.finAngle;
+	//Sync finger with new data received from a client
+	syncFinger: function(newFingerData){
+		this.fingers.forEach( function(finger){
+			if(finger.name == newFingerData.name){
+				finger.position = newFingerData.position;
+				finger.angle = newFingerData.angle;
 			}
 		});
 	},
@@ -65,7 +63,7 @@ GameServer.prototype = {
 
 	getData: function(){
 		var gameData = {};
-		gameData.turtles = this.turtles;
+		gameData.fingers = this.fingers;
 		return gameData;
 	},
 
@@ -78,26 +76,30 @@ GameServer.prototype = {
 }
 
 var game = new GameServer();
+game.addTurtle({ id: 'turtle', x: 0, y: 0, hp: TANK_INIT_HP});
 
 /* Connection events */
 
 io.on('connection', function(client) {
 	console.log('User connected');
 
-	client.on('joinGame', function(turtle){
-		console.log(turtle.id + ' joined the game');
-		var initX = getRandomInt(40, 900);
-		var initY = getRandomInt(40, 500);
-		client.emit('addTurtle', { id: turtle.id, type: turtle.type, isLocal: true, x: initX, y: initY, hp: TANK_INIT_HP });
-		client.broadcast.emit('addTurtle', { id: turtle.id, type: turtle.type, isLocal: false, x: initX, y: initY, hp: TANK_INIT_HP} );
-
-		game.addTurtle({ id: turtle.id, type: turtle.type, hp: TANK_INIT_HP});
+	client.on('joinGame', function(finger){
+		console.log(finger.name + ' joined the game');
+		client.emit('addFinger', { name: finger.name, position: finger.position, angle: finger.angle, isLocal: true } );
+		client.broadcast.emit('addFinger', { id: finger.id, position: finger.position, angle: finger.angle, isLocal: false} );
+		// var initX = getRandomInt(40, 900);
+		// var initY = getRandomInt(40, 500);
+		//client.emit('addTurtle', { id: turtle.id, type: turtle.type, isLocal: true, x: initX, y: initY, hp: TANK_INIT_HP });
+		//client.broadcast.emit('addTurtle', { id: turtle.id, type: turtle.type, isLocal: false, x: initX, y: initY, hp: TANK_INIT_HP} );
 	});
 
 	client.on('sync', function(data){
 		//Receive data from clients
-		if(data.turtle != undefined){
-			game.syncTurtle(data.turtle);
+		// if(data.turtle != undefined){
+		// 	game.syncTurtle(data.turtle);
+		// }
+		if(data.finger != undefined){
+			game.syncFinger(data.finger);
 		}
 		//Broadcast data to clients
 		client.emit('sync', game.getData());
@@ -106,21 +108,13 @@ io.on('connection', function(client) {
 		counter ++;
 	});
 
-	client.on('leaveGame', function(turtleId){
-		console.log(turtleId + ' has left the game');
-		game.removeTurtle(turtleId);
-		client.broadcast.emit('removeTurtle', turtleId);
+	client.on('leaveGame', function(fingerId){
+		console.log(fingerId + ' has left the game');
+		game.removeFinger(fingerId);
+		client.broadcast.emit('removeFinger', fingerId);
 	});
 
 });
-
-	// fly: function(){
-	// 	//move to trajectory
-	// 	var speedX = BALL_SPEED * Math.sin(this.alpha);
-	// 	var speedY = -BALL_SPEED * Math.cos(this.alpha);
-	// 	this.x += speedX;
-	// 	this.y += speedY;
-	// }
 
 function getRandomInt(min, max) {
 	return Math.floor(Math.random() * (max - min)) + min;

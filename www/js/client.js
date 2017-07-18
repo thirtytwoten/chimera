@@ -1,13 +1,14 @@
-var WIDTH = 1100;
-var HEIGHT = 580;
-// This IP is hardcoded to my server, replace with your own
+var WIDTH = 1000;
+var HEIGHT = 600;
 var socket = io.connect('localhost:8082');
-var game = new Game('#arena', WIDTH, HEIGHT, socket);
-var selectedTurtle = 1;
-var turtleName = '';
+var game = new Game('#pool', WIDTH, HEIGHT, socket);
+var name = '';
+var position = 1;
+var angle = 0;
+game.addTurtle(1,1,true,100,100);
 
-socket.on('addTurtle', function(turtle){
-	game.addTurtle(turtle.id, turtle.type, turtle.isLocal, turtle.x, turtle.y);
+socket.on('addFinger', function(finger){
+	game.addFinger(finger.id, finger.type, finger.angle, finger.isLocal);
 });
 
 socket.on('sync', function(gameServerData){
@@ -25,23 +26,23 @@ socket.on('removeTurtle', function(turtleId){
 $(document).ready( function(){
 
 	$('#join').click( function(){
-		turtleName = $('#turtle-name').val();
-		joinGame(turtleName, selectedTurtle, socket);
+		name = $('#finger-name').val();
+		joinGame(name, position, angle, socket);
 	});
 
-	$('#turtle-name').keyup( function(e){
-		turtleName = $('#turtle-name').val();
+	$('#finger-name').keyup( function(e){
+		name = $('#finger-name').val();
 		var k = e.keyCode || e.which;
 		if(k == 13){
-			joinGame(turtleName, selectedTurtle, socket);
+			joinGame(name, position, angle, socket);
 		}
 	});
 
-	$('ul.turtle-selection li').click( function(){
-		$('.turtle-selection li').removeClass('selected')
-		$(this).addClass('selected');
-		selectedTurtle = $(this).data('turtle');
-	});
+	// $('ul.turtle-selection li').click( function(){
+	// 	$('.turtle-selection li').removeClass('selected')
+	// 	$(this).addClass('selected');
+	// 	selectedTurtle = $(this).data('turtle');
+	// });
 
 });
 
@@ -49,9 +50,9 @@ $(window).on('beforeunload', function(){
 	socket.emit('leaveGame', turtleName);
 });
 
-function joinGame(turtleName, turtleType, socket){
-	if(turtleName != ''){
+function joinGame(name, position, angle, socket){
+	if(name != ''){
 		$('#prompt').hide();
-		socket.emit('joinGame', {id: turtleName, type: turtleType});
+		socket.emit('joinGame', {id: name, type: position, angle: angle});
 	}
 }
