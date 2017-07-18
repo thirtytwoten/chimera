@@ -38,7 +38,7 @@ GameServer.prototype = {
 				turtle.x = newTurtleData.x;
 				turtle.y = newTurtleData.y;
 				turtle.baseAngle = newTurtleData.baseAngle;
-				turtle.cannonAngle = newTurtleData.cannonAngle;
+				turtle.finAngle = newTurtleData.finAngle;
 			}
 		});
 	},

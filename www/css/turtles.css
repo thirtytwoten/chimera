@@ -28,26 +28,6 @@ body{
 	background-position: -10px 0;
 }
 
-.explosion{
-	position: absolute;
-	width: 100px;
-	height: 120px;
-	z-index: 99;
-}
-
-.turtle-cannon{
-	position: absolute;
-	top: -25px;
-	width: 60px;
-	height: 80px;
-	background-image: url(../img/tank-cannon.png);
-	background-position: -10px 0;
-	-webkit-transform-origin: 30px 65px;
-	   -moz-transform-origin: 30px 65px;
-		 -o-transform-origin: 30px 65px;
-			transform-origin: 30px 65px;
-}
-
 .fin{
 	position: absolute;
 	width: 15px;
@@ -57,6 +37,17 @@ body{
 	   -moz-transform-origin: 7px 38px;
 		 -o-transform-origin: 7px 38px;
 			transform-origin: 7px 38px;
+}
+
+.big-fin{
+	margin: 0 auto;
+	width: 100px;
+	height: 266px;
+	background-image: url(../img/bigFin.png);
+/*	-webkit-transform-origin: 7px 38px;
+	   -moz-transform-origin: 7px 38px;
+		 -o-transform-origin: 7px 38px;
+			transform-origin: 7px 38px;*/
 }
 
 .fin-tl{

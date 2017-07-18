@@ -1,7 +1,13 @@
-var DEBUG = true;
-var INTERVAL = 50;
-var ROTATION_SPEED = 5;
-var ARENA_MARGIN = 30;
+const DEBUG = true;
+const INTERVAL = 50;
+const ROTATION_SPEED = 5;
+const ARENA_MARGIN = 30;
+// fin index
+const TL = 0;
+const TR = 1;
+const BL = 2;
+const BR = 3;
+
 
 function Game(arenaId, w, h, socket){
 	this.turtles = []; //Turtles (other than the local turtle)
@@ -70,7 +76,7 @@ Game.prototype = {
 			x: this.localTurtle.x,
 			y: this.localTurtle.y,
 			baseAngle: this.localTurtle.baseAngle,
-			cannonAngle: this.localTurtle.cannonAngle
+			finAngle: this.localTurtle.finAngle
 		};
 		gameData.turtle = t;
 		this.socket.emit('sync', gameData);
@@ -97,7 +103,7 @@ Game.prototype = {
 					clientTurtle.x = serverTurtle.x;
 					clientTurtle.y = serverTurtle.y;
 					clientTurtle.baseAngle = serverTurtle.baseAngle;
-					clientTurtle.cannonAngle = serverTurtle.cannonAngle;
+					clientTurtle.finAngle = serverTurtle.finAngle;
 					clientTurtle.hp = serverTurtle.hp;
 					if(clientTurtle.hp <= 0){
 						game.killTurtle(clientTurtle);
@@ -125,7 +131,8 @@ function Turtle(id, type, $arena, game, isLocal, x, y, hp){
 	this.baseAngle = getRandomInt(0, 360);
 	//Make multiple of rotation amount
 	this.baseAngle -= (this.baseAngle % ROTATION_SPEED);
-	this.cannonAngle = 0;
+	this.finAngle = 0;
+	//this.finPos = [0,0,0,0];
 	this.x = x;
 	this.y = y;
 	this.mx = null;
@@ -157,20 +164,20 @@ Turtle.prototype = {
 		this.$body.css('-o-transform', 'rotateZ(' + this.baseAngle + 'deg)');
 		this.$body.css('transform', 'rotateZ(' + this.baseAngle + 'deg)');
 
-		this.$body.append('<div id="cannon-' + this.id + '" class="turtle-cannon"></div>');
-		this.$cannon = $('#cannon-' + this.id);
+		this.$arena.append('<div id="big-fin' + this.id + '" class="big-fin"></div>');
+		this.$bigFin = $('#big-fin-' + this.id);
 
 		this.$body.append('<div id="fin-' + 'tl-' + this.id + '" class="fin fin-tl"></div>');
-		this.$cannon = $('#fin-' + 'tl-' + this.id);
+		this.$finTL = $('#fin-' + 'tl-' + this.id);
 
 		this.$body.append('<div id="fin-' + 'tr-' + this.id + '" class="fin fin-tr"></div>');
-		this.$cannon = $('#fin-' + 'tr-' + this.id);
+		this.$finTR = $('#fin-' + 'tr-' + this.id);
 
 		this.$body.append('<div id="fin-' + 'bl-' + this.id + '" class="fin fin-bl"></div>');
-		this.$cannon = $('#fin-' + 'bl-' + this.id);
+		this.$finBL = $('#fin-' + 'bl-' + this.id);
 
 		this.$body.append('<div id="fin-' + 'br-' + this.id + '" class="fin fin-br"></div>');
-		this.$cannon = $('#fin-' + 'br-' + this.id);
+		this.$finBR = $('#fin-' + 'br-' + this.id);
 
 		this.$arena.append('<div id="info-' + this.id + '" class="info"></div>');
 		this.$info = $('#info-' + this.id);
@@ -196,11 +203,11 @@ Turtle.prototype = {
 		this.$body.css('-o-transform', 'rotateZ(' + this.baseAngle + 'deg)');
 		this.$body.css('transform', 'rotateZ(' + this.baseAngle + 'deg)');
 
-		var cannonAbsAngle = this.cannonAngle - this.baseAngle;
-		this.$cannon.css('-webkit-transform', 'rotateZ(' + cannonAbsAngle + 'deg)');
-		this.$cannon.css('-moz-transform', 'rotateZ(' + cannonAbsAngle + 'deg)');
-		this.$cannon.css('-o-transform', 'rotateZ(' + cannonAbsAngle + 'deg)');
-		this.$cannon.css('transform', 'rotateZ(' + cannonAbsAngle + 'deg)');
+		var finAbsAngle = this.finAngle - this.baseAngle;
+		this.$finTL.css('-webkit-transform', 'rotateZ(' + finAbsAngle + 'deg)');
+		this.$finTL.css('-moz-transform', 'rotateZ(' + finAbsAngle + 'deg)');
+		this.$finTL.css('-o-transform', 'rotateZ(' + finAbsAngle + 'deg)');
+		this.$finTL.css('transform', 'rotateZ(' + finAbsAngle + 'deg)');
 
 		this.$info.css('left', (this.x) + 'px');
 		this.$info.css('top', (this.y) + 'px');
@@ -255,9 +262,7 @@ Turtle.prototype = {
 		}).mousemove( function(e){ //Detect mouse for aiming
 			t.mx = e.pageX - t.$arena.offset().left;
 			t.my = e.pageY - t.$arena.offset().top;
-			t.setCannonAngle();
-		}).click( function(){
-			t.shoot();
+			t.setFinAngle();
 		});
 
 	},
@@ -291,7 +296,7 @@ Turtle.prototype = {
 			this.y += moveY;
 		}
 		this.rotateBase();
-		this.setCannonAngle();
+		this.setFinAngle();
 		this.refresh();
 	},
 
@@ -371,12 +376,12 @@ Turtle.prototype = {
 		}
 	},
 
-	setCannonAngle: function(){
+	setFinAngle: function(){
 		var turtle = { x: this.x , y: this.y};
 		var deltaX = this.mx - turtle.x;
 		var deltaY = this.my - turtle.y;
-		this.cannonAngle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
-		this.cannonAngle += 90;
+		this.finAngle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
+		this.finAngle += 90;
 	}
 
 }
