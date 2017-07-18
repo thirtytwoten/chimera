@@ -18,18 +18,12 @@ var io = require('socket.io')(server);
 
 function GameServer(){
 	this.turtles = [];
-	this.balls = [];
-	this.lastBallId = 0;
 }
 
 GameServer.prototype = {
 
 	addTurtle: function(turtle){
 		this.turtles.push(turtle);
-	},
-
-	addBall: function(ball){
-		this.balls.push(ball);
 	},
 
 	removeTurtle: function(turtleId){
@@ -49,37 +43,21 @@ GameServer.prototype = {
 		});
 	},
 
-	//The app has absolute control of the balls and their movement
-	syncBalls: function(){
-		var self = this;
-		//Detect when ball is out of bounds
-		this.balls.forEach( function(ball){
-			self.detectCollision(ball);
-
-			if(ball.x < 0 || ball.x > WIDTH
-				|| ball.y < 0 || ball.y > HEIGHT){
-				ball.out = true;
-			}else{
-				ball.fly();
-			}
-		});
-	},
-
 	//Detect if ball collides with any turtle
-	detectCollision: function(ball){
-		var self = this;
+	// detectCollision: function(ball){
+	// 	var self = this;
 
-		this.turtles.forEach( function(turtle){
-			if(turtle.id != ball.ownerId
-				&& Math.abs(turtle.x - ball.x) < 30
-				&& Math.abs(turtle.y - ball.y) < 30){
-				//Hit turtle
-				self.hurtTurtle(turtle);
-				ball.out = true;
-				ball.exploding = true;
-			}
-		});
-	},
+	// 	this.turtles.forEach( function(turtle){
+	// 		if(turtle.id != ball.ownerId
+	// 			&& Math.abs(turtle.x - ball.x) < 30
+	// 			&& Math.abs(turtle.y - ball.y) < 30){
+	// 			//Hit turtle
+	// 			self.hurtTurtle(turtle);
+	// 			ball.out = true;
+	// 			ball.exploding = true;
+	// 		}
+	// 	});
+	// },
 
 	hurtTurtle: function(turtle){
 		turtle.hp -= 2;
@@ -88,8 +66,6 @@ GameServer.prototype = {
 	getData: function(){
 		var gameData = {};
 		gameData.turtles = this.turtles;
-		gameData.balls = this.balls;
-
 		return gameData;
 	},
 
@@ -97,19 +73,6 @@ GameServer.prototype = {
 		this.turtles = this.turtles.filter(function(t){
 			return t.hp > 0;
 		});
-	},
-
-	cleanDeadBalls: function(){
-		this.balls = this.balls.filter(function(ball){
-			return !ball.out;
-		});
-	},
-
-	increaseLastBallId: function(){
-		this.lastBallId ++;
-		if(this.lastBallId > 1000){
-			this.lastBallId = 0;
-		}
 	}
 
 }
@@ -136,22 +99,11 @@ io.on('connection', function(client) {
 		if(data.turtle != undefined){
 			game.syncTurtle(data.turtle);
 		}
-		//update ball positions
-		game.syncBalls();
 		//Broadcast data to clients
 		client.emit('sync', game.getData());
 		client.broadcast.emit('sync', game.getData());
 
-		//I do the cleanup after sending data, so the clients know
-		//when the turtle dies and when the balls explode
-		game.cleanDeadTurtles();
-		game.cleanDeadBalls();
 		counter ++;
-	});
-
-	client.on('shoot', function(ball){
-		var ball = new Ball(ball.ownerId, ball.alpha, ball.x, ball.y );
-		game.addBall(ball);
 	});
 
 	client.on('leaveGame', function(turtleId){
@@ -162,27 +114,13 @@ io.on('connection', function(client) {
 
 });
 
-function Ball(ownerId, alpha, x, y){
-	this.id = game.lastBallId;
-	game.increaseLastBallId();
-	this.ownerId = ownerId;
-	this.alpha = alpha; //angle of shot in radians
-	this.x = x;
-	this.y = y;
-	this.out = false;
-};
-
-Ball.prototype = {
-
-	fly: function(){
-		//move to trajectory
-		var speedX = BALL_SPEED * Math.sin(this.alpha);
-		var speedY = -BALL_SPEED * Math.cos(this.alpha);
-		this.x += speedX;
-		this.y += speedY;
-	}
-
-}
+	// fly: function(){
+	// 	//move to trajectory
+	// 	var speedX = BALL_SPEED * Math.sin(this.alpha);
+	// 	var speedY = -BALL_SPEED * Math.cos(this.alpha);
+	// 	this.x += speedX;
+	// 	this.y += speedY;
+	// }
 
 function getRandomInt(min, max) {
 	return Math.floor(Math.random() * (max - min)) + min;

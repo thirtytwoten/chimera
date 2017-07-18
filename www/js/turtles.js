@@ -5,7 +5,6 @@ var ARENA_MARGIN = 30;
 
 function Game(arenaId, w, h, socket){
 	this.turtles = []; //Turtles (other than the local turtle)
-	//this.balls = [];
 	this.width = w;
 	this.height = h;
 	this.$arena = $(arenaId);
@@ -74,8 +73,6 @@ Game.prototype = {
 			cannonAngle: this.localTurtle.cannonAngle
 		};
 		gameData.turtle = t;
-		//Client game does not send any info about balls,
-		//the server controls that part
 		this.socket.emit('sync', gameData);
 	},
 
@@ -115,52 +112,7 @@ Game.prototype = {
 				game.addTurtle(serverTurtle.id, serverTurtle.type, false, serverTurtle.x, serverTurtle.y, serverTurtle.hp);
 			}
 		});
-
-		//Render balls
-		game.$arena.find('.cannon-ball').remove();
-
-		serverData.balls.forEach( function(serverBall){
-			var b = new Ball(serverBall.id, serverBall.ownerId, game.$arena, serverBall.x, serverBall.y);
-			b.exploding = serverBall.exploding;
-			if(b.exploding){
-				b.explode();
-			}
-		});
 	}
-}
-
-function Ball(id, ownerId, $arena, x, y){
-	this.id = id;
-	this.ownerId = ownerId;
-	this.$arena = $arena;
-	this.x = x;
-	this.y = y;
-
-	this.materialize();
-}
-
-Ball.prototype = {
-
-	materialize: function(){
-		this.$arena.append('<div id="' + this.id + '" class="cannon-ball" style="left:' + this.x + 'px"></div>');
-		this.$body = $('#' + this.id);
-		this.$body.css('left', this.x + 'px');
-		this.$body.css('top', this.y + 'px');
-	},
-
-	explode: function(){
-		this.$arena.append('<div id="expl' + this.id + '" class="ball-explosion" style="left:' + this.x + 'px"></div>');
-		var $expl = $('#expl' + this.id);
-		$expl.css('left', this.x + 'px');
-		$expl.css('top', this.y + 'px');
-		setTimeout( function(){
-			$expl.addClass('expand');
-		}, 1);
-		setTimeout( function(){
-			$expl.remove();
-		}, 1000);
-	}
-
 }
 
 function Turtle(id, type, $arena, game, isLocal, x, y, hp){
@@ -425,27 +377,6 @@ Turtle.prototype = {
 		var deltaY = this.my - turtle.y;
 		this.cannonAngle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
 		this.cannonAngle += 90;
-	},
-
-	shoot: function(){
-		if(this.dead){
-			return;
-		}
-
-		//Emit ball to server
-		var serverBall = {};
-		//Just for local balls who have owner
-		serverBall.alpha = this.cannonAngle * Math.PI / 180; //angle of shot in radians
-		//Set init position
-		var cannonLength = 60;
-		var deltaX = cannonLength * Math.sin(serverBall.alpha);
-		var deltaY = cannonLength * Math.cos(serverBall.alpha);
-
-		serverBall.ownerId = this.id;
-		serverBall.x = this.x + deltaX - 5;
-		serverBall.y = this.y - deltaY - 5;
-
-		this.game.socket.emit('shoot', serverBall);
 	}
 
 }
