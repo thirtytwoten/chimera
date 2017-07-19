@@ -5,33 +5,10 @@ const ARENA_MARGIN = 30;
 const TURTLE_INIT_HP = 100;
 const POSITIONS = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
 
-let Fingers = [
-  { playerName: '',
-    position: 'top-left',
-    angle: 0,
-    $div: null, 
-    occupied: false,
-    isLocal: false },
-  { playerName: '',
-    position: 'top-right',
-    angle: 0,
-    $div: null,
-    occupied: false,
-    isLocal: false },
-  { playerName: '',
-    position: 'bottom-left',
-    angle: 0,
-    $div: null,
-    occupied: false,
-    isLocal: false },
-  { playerName: '',
-    position: 'bottom-right',
-    angle: 0,
-    $div: null,
-    occupied: false,
-    isLocal: false
-  }
-];
+let Fingers = [];
+for (i in POSITIONS){
+  Fingers.push(new Finger({position: POSITIONS[i]}));
+}
 
 Fingers.getFingerAtPosition = function(strOrIndex){
   let index = Number.isInteger(strOrIndex) ? strOrIndex : POSITIONS.indexOf(strOrIndex);
@@ -47,13 +24,33 @@ Fingers.occupied = function() {
     return finger.occupied;
   });
 }
-
 Fingers.bigFinger = {
   position: 'big-fin',
   angle: 0,
   $div: $('#big-fin'),
   update: function() {
 
+  }
+}
+
+function Finger({
+  playerName = '',
+  position = '',
+  angle = 0,
+  occupied = false,
+  isLocal = false
+}){
+  this.playerName = playerName;
+  this.position = position;
+  this.angle = angle;
+  this.occupied = occupied;
+  this.isLocal = isLocal;
+  this.id = 'fin-' + this.position;
+}
+
+Finger.prototype = {
+  getDomElement: function(){
+    return $(this.id);
   }
 }
 

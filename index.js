@@ -67,6 +67,9 @@ var game = new GameServer();
 io.on('connection', function(client) {
   console.log('User connected');
 
+  //sync existing information to client
+  client.emit('sync', game.getData());
+
   client.on('joinGame', function(finger){
     console.log(finger.playerName + ' joined the game');
     client.emit('addPlayer', { playerName: finger.playerName, isLocal: true } );
