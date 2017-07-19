@@ -2,7 +2,42 @@ const DEBUG = true;
 const INTERVAL = 50;
 const ROTATION_SPEED = 5;
 const ARENA_MARGIN = 30;
-var TURTLE_INIT_HP = 100;
+const TURTLE_INIT_HP = 100;
+const POSITIONS = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+
+let Fingers = [
+  { playerName: '',
+    position: 'top-left',
+    angle: 0,
+    occupied: false,
+    isLocal: false },
+  { playerName: '',
+    position: 'top-right',
+    angle: 0,
+    occupied: false,
+    isLocal: false },
+  { playerName: '',
+    position: 'bottom-left',
+    angle: 0,
+    occupied: false,
+    isLocal: false },
+  { playerName: '',
+    position: 'bottom-right',
+    angle: 0,
+    occupied: false,
+    isLocal: false
+  }
+];
+
+Fingers.getFingerAtPosition = function(strOrIndex){
+  let index = Number.isInteger(strOrIndex) ? strOrIndex : POSITIONS.indexOf(strOrIndex);
+  return (index >= 0 && index < POSITIONS.length) ? this[index] : null;
+};
+Fingers.getLocalFinger = function() {
+  return this.find(function(finger){
+    return finger.isLocal;
+  });
+};
 
 function Game(arenaId, w, h, socket){
   this.fingers = []; //Fingers (other than the local finger)
