@@ -218,7 +218,7 @@ Turtle.prototype = {
     //TODO: aggregate fin values to get base speed and rotation
 
     var moveX = 0;//Math.cos(radians(this.finAngle));
-    var moveY = Math.sin(radians(this.finAngle));
+    var moveY = Math.sin(radians(this.game.localAngle));
 
     moveX = this.speed * moveX;
     moveY = this.speed * moveY;
