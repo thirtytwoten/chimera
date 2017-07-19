@@ -2,6 +2,7 @@ const DEBUG = true;
 const INTERVAL = 50;
 const ROTATION_SPEED = 5;
 const ARENA_MARGIN = 30;
+var TURTLE_INIT_HP = 100;
 
 function Game(arenaId, w, h, socket){
 	this.fingers = []; //Fingers (other than the local finger)
@@ -9,10 +10,12 @@ function Game(arenaId, w, h, socket){
 	this.bigFinger = null;
 	this.width = w;
 	this.height = h;
+	this.mx = null;
+	this.my = null;
 	this.$arena = $(arenaId);
 	this.$arena.css('width', w);
 	this.$arena.css('height', h);
-	this.turtle = null;
+	this.turtle = new Turtle(1, 1, this, this.$arena, w/2, h/2, TURTLE_INIT_HP);
 	this.socket = socket;
 
 	var g = this;
@@ -23,23 +26,21 @@ function Game(arenaId, w, h, socket){
 
 Game.prototype = {
 
-	addTurtle: function(id, x, y, hp){
-		this.turtle = new Turtle(id, this.$arena, this, x, y, hp);
-	},
-
-	addFinger: function(){
-		var f = new Finger(id, position, angle, this.turtle, this.$arena, this, isLocal);
+	addFinger: function(name, position, angle, isLocal){
+		var f = new Finger(name, position, angle, this, isLocal);
 		if(isLocal){
 			this.localFinger = f;
-			this.bigFinger = new Bigfinger(f);
+			this.bigFinger = new BigFinger(f, this);
 		}else{
 			this.fingers.push(f);
 		}
 	},
 
 	mainLoop: function(){
-		if(this.localTurtle != undefined){
-			//move local turtle
+		if(this.localFinger != undefined){
+			//send data to server about local finger
+			this.sendData();
+			//move local tank
 			this.turtle.move();
 		}
 	},
@@ -60,49 +61,47 @@ Game.prototype = {
 
 	receiveData: function(serverData){
 		var game = this;
-
 		serverData.fingers.forEach( function(serverFinger){
 
-			// //Update local turtle stats
-			// if(game.localTurtle !== undefined && serverTurtle.id == game.localTurtle.id){
-			// 	game.localTurtle.hp = serverTurtle.hp;
-			// 	if(game.localTurtle.hp <= 0){
-			// 		game.killTurtle(game.localTurtle);
-			// 	}
-			// }
-
-			//Update foreign turtles
 			var found = false;
 			game.fingers.forEach( function(clientFinger){
-				//update foreign turtles
+				//update foreign fingers
 				if(clientFinger.name == serverFinger.name){
 					clientFinger.position = serverFinger.position;
-					clientTurtle.angle = serverFinger.angle;
-					// if(clientTurtle.hp <= 0){
-					// 	game.killTurtle(clientTurtle);
-					// }
+					clientFinger.angle = serverFinger.angle;
 					clientFinger.refresh();
 					found = true;
 				}
 			});
 			if(!found &&
-				(game.localFinger == undefined || serverFinger.name != game.localFinger.name)){
-				//I need to create it
+					(game.localFinger == undefined || serverFinger.name != game.localFinger.name)
+				){
+				//create it
 				game.addFinger(serverFinger.name, serverFinger.position, serverFinger.angle, false);
 			}
 		});
 	}
 }
 
-function BigFinger(f){
-	this.angle = f.angle;
+function BigFinger(f, game){
+	this.game = game;
+	this.materialize();
 }
 
 BigFinger.prototype = {
-
+	materialize: function() {
+		this.game.$arena.append('<div id="big-fin-' + this.id + '" class="big-fin"></div>');
+		this.game.$bigFin = $('#big-fin-' + this.id);
+	},
+	refresh: function() {
+		this.game.$bigFin.css('-webkit-transform', 'rotateZ(' + this.game.localFinger.angle + 'deg)');
+		this.game.$bigFin.css('-moz-transform', 'rotateZ(' + this.game.localFinger.angle + 'deg)');
+		this.game.$bigFin.css('-o-transform', 'rotateZ(' + this.game.localFinger.angle + 'deg)');
+		this.game.$bigFin.css('transform', 'rotateZ(' + this.game.localFinger.angle + 'deg)');
+	}
 }
 
-function Turtle(id, type, $arena, game, isLocal, x, y, hp){
+function Turtle(id, type, game, $arena, x, y, hp){
 	this.id = id;
 	this.type = type;
 	this.speed = 5;
@@ -116,16 +115,7 @@ function Turtle(id, type, $arena, game, isLocal, x, y, hp){
 	//this.finPos = [0,0,0,0];
 	this.x = x;
 	this.y = y;
-	this.mx = null;
-	this.my = null;
-	this.dir = {
-		up: false,
-		down: false,
-		left: false,
-		right: false
-	};
 	this.game = game;
-	this.isLocal = isLocal;
 	this.hp = hp;
 	this.dead = false;
 
@@ -145,20 +135,17 @@ Turtle.prototype = {
 		this.$body.css('-o-transform', 'rotateZ(' + this.baseAngle + 'deg)');
 		this.$body.css('transform', 'rotateZ(' + this.baseAngle + 'deg)');
 
-		this.$arena.append('<div id="big-fin-' + this.id + '" class="big-fin"></div>');
-		this.$bigFin = $('#big-fin-' + this.id);
+		// this.$body.append('<div id="fin-' + 'tl-' + this.id + '" class="fin fin-tl"></div>');
+		// this.$finTL = $('#fin-' + 'tl-' + this.id);
 
-		this.$body.append('<div id="fin-' + 'tl-' + this.id + '" class="fin fin-tl"></div>');
-		this.$finTL = $('#fin-' + 'tl-' + this.id);
+		// this.$body.append('<div id="fin-' + 'tr-' + this.id + '" class="fin fin-tr"></div>');
+		// this.$finTR = $('#fin-' + 'tr-' + this.id);
 
-		this.$body.append('<div id="fin-' + 'tr-' + this.id + '" class="fin fin-tr"></div>');
-		this.$finTR = $('#fin-' + 'tr-' + this.id);
+		// this.$body.append('<div id="fin-' + 'bl-' + this.id + '" class="fin fin-bl"></div>');
+		// this.$finBL = $('#fin-' + 'bl-' + this.id);
 
-		this.$body.append('<div id="fin-' + 'bl-' + this.id + '" class="fin fin-bl"></div>');
-		this.$finBL = $('#fin-' + 'bl-' + this.id);
-
-		this.$body.append('<div id="fin-' + 'br-' + this.id + '" class="fin fin-br"></div>');
-		this.$finBR = $('#fin-' + 'br-' + this.id);
+		// this.$body.append('<div id="fin-' + 'br-' + this.id + '" class="fin fin-br"></div>');
+		// this.$finBR = $('#fin-' + 'br-' + this.id);
 
 		this.$arena.append('<div id="info-' + this.id + '" class="info"></div>');
 		this.$info = $('#info-' + this.id);
@@ -172,11 +159,10 @@ Turtle.prototype = {
 		}
 	},
 
-	isMoving: function(){
-		return this.dir.up || this.dir.down || this.dir.left || this.dir.right;
-	},
-
 	refresh: function(){
+		this.game.localFinger && this.game.localFinger.refresh();
+		this.game.bigFinger && this.game.bigFinger.refresh();
+
 		this.$body.css('left', this.x - 30 + 'px');
 		this.$body.css('top', this.y - 40 + 'px');
 		this.$body.css('-webkit-transform', 'rotateZ(' + this.baseAngle + 'deg)');
@@ -184,39 +170,17 @@ Turtle.prototype = {
 		this.$body.css('-o-transform', 'rotateZ(' + this.baseAngle + 'deg)');
 		this.$body.css('transform', 'rotateZ(' + this.baseAngle + 'deg)');
 
-		var finAbsAngle = this.finAngle;// - this.baseAngle;
-		this.$bigFin.css('-webkit-transform', 'rotateZ(' + finAbsAngle + 'deg)');
-		this.$bigFin.css('-moz-transform', 'rotateZ(' + finAbsAngle + 'deg)');
-		this.$bigFin.css('-o-transform', 'rotateZ(' + finAbsAngle + 'deg)');
-		this.$bigFin.css('transform', 'rotateZ(' + finAbsAngle + 'deg)');
-
 		this.$info.css('left', (this.x) + 'px');
 		this.$info.css('top', (this.y) + 'px');
-		if(this.isMoving()){
-			this.$info.addClass('fade');
-		}else{
-			this.$info.removeClass('fade');
-		}
 
 		this.$info.find('.hp-bar').css('width', this.hp + 'px');
 		this.$info.find('.hp-bar').css('background-color', getGreenToRed(this.hp));
-	},
-
-	setControls: function(){
-		var t = this;
-		$(document).mousemove( function(e){ //Detect mouse for pointing finger
-			t.mx = e.pageX - t.$arena.offset().left;
-			t.setFinAngle();
-		});
-
 	},
 
 	move: function(){
 		if(this.dead){
 			return;
 		}
-
-		this.setFinAngle();
 		//aggregate fin values to get base speed and rotation
 
 		var moveX = 0;//Math.cos(radians(this.finAngle));
@@ -231,28 +195,21 @@ Turtle.prototype = {
 		if(this.y + moveY > (0 + ARENA_MARGIN) && (this.y + moveY) < (this.$arena.height() - ARENA_MARGIN)){
 			this.y += moveY;
 		}
-		//this.rotateBase();
 		
 		this.refresh();
-	},
-
-	setFinAngle: function(){
-		// if 0 is strait up, finger should move from -90 to 90
-		let domain = [0, this.game.width];
-		let range = [-90, 90];
-		this.finAngle = scale(this.mx, domain, range);
 	}
 
 }
 
-function Finger(name, position, angle, turtle, game, isLocal) {
+function Finger(name, position, angle, game, isLocal) {
 	this.name = name;
 	this.position = position;
 	this.angle = 0;
 	//Make multiple of rotation amount
 	//this.baseAngle -= (this.baseAngle % ROTATION_SPEED);
-	//this.game = game;
-	this.turtle = turtle;
+	this.game = game;
+	this.turtle = game.turtle;
+	this.$arena = game.$arena;
 	this.isLocal = isLocal;
 
 	this.materialize();
@@ -261,11 +218,7 @@ function Finger(name, position, angle, turtle, game, isLocal) {
 Finger.prototype = {
 
 	materialize: function(){
-
-		// this.$arena.append('<div id="big-fin-' + this.id + '" class="big-fin"></div>');
-		// this.$bigFin = $('#big-fin-' + this.id);
-
-		this.turtle.$body.append('<div id="fin-' + this.position + '-' + this.id + '" class="fin fin-' + this.position + '"></div>');
+		this.turtle.$body.append('<div id="fin-' + this.position + '-' + this.name + '" class="fin fin-' + this.position + '"></div>');
 		this.$fin = $('#fin-' + this.position + '-' + this.name);
 
 		this.refresh();
@@ -285,42 +238,19 @@ Finger.prototype = {
 	setControls: function(){
 		var t = this;
 		$(document).mousemove( function(e){ //Detect mouse for pointing finger
-			t.mx = e.pageX - t.turtle.$arena.offset().left;
+			t.game.mx = e.pageX - t.turtle.$arena.offset().left;
 			t.setFinAngle();
 		});
 
-	},
-
-	move: function(){
-		if(this.dead){
-			return;
-		}
-
-		this.setFinAngle();
-		//aggregate fin values to get base speed and rotation
-
-		var moveX = 0;//Math.cos(radians(this.finAngle));
-		var moveY = Math.sin(radians(this.finAngle));
-
-		moveX = this.speed * moveX;
-		moveY = this.speed * moveY;
-
-		if(this.x + moveX > (0 + ARENA_MARGIN) && (this.x + moveX) < (this.$arena.width() - ARENA_MARGIN)){
-			this.x += moveX;
-		}
-		if(this.y + moveY > (0 + ARENA_MARGIN) && (this.y + moveY) < (this.$arena.height() - ARENA_MARGIN)){
-			this.y += moveY;
-		}
-		//this.rotateBase();
-		
-		this.refresh();
 	},
 
 	setFinAngle: function(){
 		// if 0 is strait up, finger should move from -90 to 90
 		let domain = [0, this.game.width];
 		let range = [-90, 90];
-		this.finAngle = scale(this.mx, domain, range);
+		this.angle = scale(this.game.mx, domain, range);
+		this.turtle.finAngle = this.angle;
+		this.turtle.refresh();
 	}
 
 }

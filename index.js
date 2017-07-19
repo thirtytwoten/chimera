@@ -4,7 +4,6 @@ var counter = 0;
 var BALL_SPEED = 10;
 var WIDTH = 1100;
 var HEIGHT = 580;
-var TANK_INIT_HP = 100;
 
 //Static resources server
 app.use(express.static(__dirname + '/www'));
@@ -23,6 +22,8 @@ function GameServer(){
 GameServer.prototype = {
 
 	addFinger: function(finger){
+		console.log('server add finger');
+		console.log(finger);
 		this.fingers.push(finger);
 	},
 
@@ -76,7 +77,7 @@ GameServer.prototype = {
 }
 
 var game = new GameServer();
-game.addTurtle({ id: 'turtle', x: 0, y: 0, hp: TANK_INIT_HP});
+//game.addTurtle({ id: 'turtle', x: 0, y: 0, hp: TANK_INIT_HP});
 
 /* Connection events */
 
@@ -85,8 +86,9 @@ io.on('connection', function(client) {
 
 	client.on('joinGame', function(finger){
 		console.log(finger.name + ' joined the game');
+		game.addFinger({name: finger.name, position: finger.position, angle: finger.angle});
 		client.emit('addFinger', { name: finger.name, position: finger.position, angle: finger.angle, isLocal: true } );
-		client.broadcast.emit('addFinger', { id: finger.id, position: finger.position, angle: finger.angle, isLocal: false} );
+		client.broadcast.emit('addFinger', { name: finger.name, position: finger.position, angle: finger.angle, isLocal: false} );
 		// var initX = getRandomInt(40, 900);
 		// var initY = getRandomInt(40, 500);
 		//client.emit('addTurtle', { id: turtle.id, type: turtle.type, isLocal: true, x: initX, y: initY, hp: TANK_INIT_HP });
@@ -108,10 +110,10 @@ io.on('connection', function(client) {
 		counter ++;
 	});
 
-	client.on('leaveGame', function(fingerId){
-		console.log(fingerId + ' has left the game');
-		game.removeFinger(fingerId);
-		client.broadcast.emit('removeFinger', fingerId);
+	client.on('leaveGame', function(fingerName){
+		console.log(fingerName + ' has left the game');
+		game.removeFinger(fingerName);
+		client.broadcast.emit('removeFinger', fingerName);
 	});
 
 });

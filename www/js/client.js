@@ -3,12 +3,11 @@ var HEIGHT = 600;
 var socket = io.connect('localhost:8082');
 var game = new Game('#pool', WIDTH, HEIGHT, socket);
 var name = '';
-var position = 1;
+var position = 'TL';
 var angle = 0;
-game.addTurtle(1,1,true,100,100);
 
 socket.on('addFinger', function(finger){
-	game.addFinger(finger.id, finger.type, finger.angle, finger.isLocal);
+	game.addFinger(finger.name, finger.position, finger.angle, finger.isLocal);
 });
 
 socket.on('sync', function(gameServerData){
@@ -47,12 +46,12 @@ $(document).ready( function(){
 });
 
 $(window).on('beforeunload', function(){
-	socket.emit('leaveGame', turtleName);
+	socket.emit('leaveGame', name);
 });
 
 function joinGame(name, position, angle, socket){
 	if(name != ''){
 		$('#prompt').hide();
-		socket.emit('joinGame', {id: name, type: position, angle: angle});
+		socket.emit('joinGame', {name: name, position: position, angle: angle});
 	}
 }
