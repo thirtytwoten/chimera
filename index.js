@@ -42,22 +42,6 @@ GameServer.prototype = {
     }
   },
 
-  //Detect if ball collides with any turtle
-  // detectCollision: function(ball){
-  //  var self = this;
-
-  //  this.turtles.forEach( function(turtle){
-  //    if(turtle.id != ball.ownerId
-  //      && Math.abs(turtle.x - ball.x) < 30
-  //      && Math.abs(turtle.y - ball.y) < 30){
-  //      //Hit turtle
-  //      self.hurtTurtle(turtle);
-  //      ball.out = true;
-  //      ball.exploding = true;
-  //    }
-  //  });
-  // },
-
   hurtTurtle: function(turtle){
     turtle.hp -= 2;
   },

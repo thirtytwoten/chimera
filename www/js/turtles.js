@@ -37,11 +37,6 @@ Fingers.getFingerAtPosition = function(strOrIndex){
   let index = Number.isInteger(strOrIndex) ? strOrIndex : POSITIONS.indexOf(strOrIndex);
   return (index >= 0 && index < POSITIONS.length) ? this[index] : null;
 }
-// Fingers.getLocalFinger = function() {
-//   return this.find(function(finger){
-//     return finger.isLocal;
-//   });
-// }
 Fingers.getOpenFinger = function() {
   return this.find(function(finger){
     return !finger.occupied;
@@ -62,17 +57,17 @@ Fingers.bigFinger = {
   }
 }
 
-function Game(arenaId, w, h, socket){
+function Game(arenaSelector, turtleId, w, h, socket){
   this.update = true;
   this.width = w;
   this.height = h;
   this.mx = null;
-  this.$arena = $(arenaId);
+  this.$arena = $(arenaSelector);
   this.$arena.css('width', w);
   this.$arena.css('height', h);
   this.localFinger = null;
   this.bigFinger = Fingers.bigFinger;
-  this.turtle = new Turtle('main-turtle', this, w/2, h/2);
+  this.turtle = new Turtle(turtleId, this, w/2, h/2);
   this.socket = socket;
   this.localAngle = 0;
 
@@ -110,7 +105,7 @@ Game.prototype = {
       this.localFinger = newFinger;
       this.bigFinger.$div.css('visibility', 'visible');
     }
-    this.turtle.addFin(newFinger);
+    newFinger.$div = this.turtle.addFin(newFinger);
   },
 
   mainLoop: function(){
@@ -133,29 +128,30 @@ Game.prototype = {
   receiveData: function(serverData){
     var game = this;
     serverData.fingers.forEach(function(serverFinger){
-      //console.log(serverFinger);
       let clientFinger = Fingers.getFingerAtPosition(serverFinger.position);
-      Object.assign(clientFinger, serverFinger);
-      // redraw Client Finger if changed
+      Object.assign(clientFinger, serverFinger, {occupied: true});
+      // redraw Client Finger if changed?
     });
   },
 
   refreshFingers: function() {
+    let game = this;
     let drawnFingers = Fingers.occupied();
     drawnFingers.push(this.bigFinger);
-    drawnFingers.forEach(function(fin){
-      fin.$div = $(fin.$div.selector); //TODO fix $div selection bug @ addFin
-      let deg = fin.angle;
-      fin.$div.css('-webkit-transform', 'rotateZ(' + deg + 'deg)');
-      fin.$div.css('-moz-transform', 'rotateZ(' + deg + 'deg)');
-      fin.$div.css('-o-transform', 'rotateZ(' + deg + 'deg)');
-      fin.$div.css('transform', 'rotateZ(' + deg + 'deg)');
+    drawnFingers.forEach(function(finger){
+      if($(finger.$div.selector).length === 0){ finger.$div = game.turtle.addFin(finger) }
+      finger.$div = $(finger.$div.selector); //TODO fix $div selection bug @ addFin
+      let deg = finger.angle;
+      finger.$div.css('-webkit-transform', 'rotateZ(' + deg + 'deg)');
+      finger.$div.css('-moz-transform', 'rotateZ(' + deg + 'deg)');
+      finger.$div.css('-o-transform', 'rotateZ(' + deg + 'deg)');
+      finger.$div.css('transform', 'rotateZ(' + deg + 'deg)');
     });
   }
 }
 
 function Turtle(id, game, x, y, hp){
-  this.id = id;
+  this.$body = $('#' + id);
   this.speed = 5;
   this.w = 60;
   this.h = 80;
@@ -167,17 +163,13 @@ function Turtle(id, game, x, y, hp){
   this.game = game;
   this.hp = TURTLE_INIT_HP;
   this.dead = false;
-  this.$body = null;
   this.$info = null;
-
   this.materialize();
 }
 
 Turtle.prototype = {
 
   materialize: function(){
-    this.game.$arena.append('<div id="' + this.id + '" class="turtle turtle1"></div>');
-    this.$body = $('#' + this.id);
     this.$body.css('width', this.w);
     this.$body.css('height', this.h);
 
@@ -195,11 +187,16 @@ Turtle.prototype = {
     this.refresh();
   },
 
-  addFin: function(newFinger) {
-    let id = `fin-${newFinger.position}`
+  addFin: function(finger) {
+    var id = 'fin-' + finger.position;
     this.$body.append(`<div id="${id}" class="fin"></div>`);
     // TODO fix this bug
-    newFinger.$div = $(`#${id}`);
+    let $newFin = $('#' + id);
+    return $newFin;
+  },
+
+  removeFin: function(finger) {
+    // TODO
   },
 
   refresh: function(){
