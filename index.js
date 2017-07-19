@@ -1,8 +1,6 @@
 var express = require('express');
 var app = express();
 var counter = 0;  //not really used
-var WIDTH = 1100;
-var HEIGHT = 580;
 
 app.use(express.static(__dirname + '/www'));
 var server = app.listen(process.env.PORT || 8082, function () {
@@ -14,6 +12,12 @@ var io = require('socket.io')(server);
 
 function GameServer(){
   this.fingers = [];
+  this.turtle = {
+    id: 'main-turtle',
+    x: 300,
+    y: 200,
+    hp: 100
+  }
 }
 
 GameServer.prototype = {
@@ -23,7 +27,6 @@ GameServer.prototype = {
   },
 
   removeFinger: function(playerName){
-    //Remove finger
     this.fingers = this.fingers.filter( function(f){return f.playerName != playerName} );
   },
 
@@ -49,6 +52,7 @@ GameServer.prototype = {
   getData: function(){
     var gameData = {};
     gameData.fingers = this.fingers;
+    gameData.turtle = this.turtle;
     return gameData;
   },
 

@@ -1,11 +1,12 @@
 var WIDTH = 600;
 var HEIGHT = 300;
 var socket = io.connect('localhost:8082');
-var game = new Game('#pool', 'main-turtle', WIDTH, HEIGHT, socket);
+var localGame = new Game('#pool', 'main-turtle', WIDTH, HEIGHT, socket);
 var playerName = '';
+var serverPing = false;
 
 socket.on('addPlayer', function(finger){
-  game.addPlayer(finger.playerName, finger.isLocal);
+  localGame.addPlayer(finger.playerName, finger.isLocal);
 });
 
 socket.on('removeFinger', function(finger){
@@ -13,7 +14,12 @@ socket.on('removeFinger', function(finger){
 })
 
 socket.on('sync', function(gameServerData){
-  game.receiveData(gameServerData);
+  localGame.receiveData(gameServerData, !serverPing);
+  if(!serverPing){
+    //first contact
+    $('.btn#join').prop('disabled', false);
+    serverPing = true;
+  }
 });
 
 $(document).ready( function(){

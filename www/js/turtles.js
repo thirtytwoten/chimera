@@ -64,19 +64,20 @@ function Game(arenaSelector, turtleId, w, h, socket){
   this.$arena.css('height', h);
   this.localFinger = null;
   this.bigFinger = Fingers.bigFinger;
-  this.turtle = new Turtle(turtleId, this, w/2, h/2);
+  this.turtle = null;
   this.socket = socket;
   this.localAngle = 0;
-
-  this.setControls();
-
-  var g = this;
-  setInterval(function(){
-    g.mainLoop();
-  }, INTERVAL);
 }
 
 Game.prototype = {
+
+  init: function(serverData){
+    this.turtle = new Turtle(serverData.turtle);
+    this.setControls();
+    setInterval(function(){
+      localGame.mainLoop();
+    }, INTERVAL);
+  },
 
   setControls: function(){
     var t = this;
@@ -119,24 +120,25 @@ Game.prototype = {
     //Send local data to server
     var gameData = {};
     gameData.finger = this.localFinger;
+    //gameData.turtle = this.turtle;
     this.socket.emit('sync', gameData);
   },
 
-  receiveData: function(serverData){
-    var game = this;
+  receiveData: function(serverData, init){
+    if(init){
+      this.init(serverData);
+    }
     serverData.fingers.forEach(function(serverFinger){
       let clientFinger = Fingers.getFingerAtPosition(serverFinger.position);
       Object.assign(clientFinger, serverFinger, {occupied: true});
-      // redraw Client Finger if changed?
     });
   },
 
   refreshFingers: function() {
-    let game = this;
     let drawnFingers = Fingers.occupied();
     drawnFingers.push(this.bigFinger);
     drawnFingers.forEach(function(finger){
-      if($(finger.$div.selector).length === 0){ finger.$div = game.turtle.addFin(finger) }
+      if($(finger.$div.selector).length === 0){ finger.$div = localGame.turtle.addFin(finger) }
       finger.$div = $(finger.$div.selector); //TODO fix $div selection bug @ addFin
       let deg = finger.angle;
       finger.$div.css('-webkit-transform', 'rotateZ(' + deg + 'deg)');
@@ -147,8 +149,9 @@ Game.prototype = {
   }
 }
 
-function Turtle(id, game, x, y, hp){
-  this.$body = $('#' + id);
+function Turtle({id, x, y, hp}){
+  this.id = id;
+  this.body = null;
   this.speed = 5;
   this.w = 60;
   this.h = 80;
@@ -157,8 +160,7 @@ function Turtle(id, game, x, y, hp){
   this.baseAngle -= (this.baseAngle % ROTATION_SPEED);
   this.x = x;
   this.y = y;
-  this.game = game;
-  this.hp = TURTLE_INIT_HP;
+  this.hp = hp;
   this.dead = false;
   this.$info = null;
   this.materialize();
@@ -167,6 +169,8 @@ function Turtle(id, game, x, y, hp){
 Turtle.prototype = {
 
   materialize: function(){
+    localGame.$arena.append('<div id="' + this.id + '" class="turtle turtle1"></div>');
+    this.$body = $('#' + this.id);
     this.$body.css('width', this.w);
     this.$body.css('height', this.h);
 
@@ -176,7 +180,7 @@ Turtle.prototype = {
     // this.$body.css('-o-transform', 'rotateZ(' + this.baseAngle + 'deg)');
     // this.$body.css('transform', 'rotateZ(' + this.baseAngle + 'deg)');
 
-    this.game.$arena.append('<div id="info-' + this.id + '" class="info"></div>');
+    localGame.$arena.append('<div id="info-' + this.id + '" class="info"></div>');
     this.$info = $('#info-' + this.id);
     this.$info.append('<div class="label">' + this.id + '</div>');
     this.$info.append('<div class="hp-bar"></div>');
@@ -218,15 +222,15 @@ Turtle.prototype = {
     //TODO: aggregate fin values to get base speed and rotation
 
     var moveX = 0;//Math.cos(radians(this.finAngle));
-    var moveY = Math.sin(radians(this.game.localAngle));
+    var moveY = Math.sin(radians(localGame.localAngle));
 
     moveX = this.speed * moveX;
     moveY = this.speed * moveY;
 
-    if(this.x + moveX > (0 + ARENA_MARGIN) && (this.x + moveX) < (this.game.$arena.width() - ARENA_MARGIN)){
+    if(this.x + moveX > (0 + ARENA_MARGIN) && (this.x + moveX) < (localGame.$arena.width() - ARENA_MARGIN)){
       this.x += moveX;
     }
-    if(this.y + moveY > (0 + ARENA_MARGIN) && (this.y + moveY) < (this.game.$arena.height() - ARENA_MARGIN)){
+    if(this.y + moveY > (0 + ARENA_MARGIN) && (this.y + moveY) < (localGame.$arena.height() - ARENA_MARGIN)){
       this.y += moveY;
     }
     
