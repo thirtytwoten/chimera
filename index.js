@@ -22,19 +22,24 @@ GameServer.prototype = {
     this.fingers.push(finger);
   },
 
-  removeFinger: function(fingerName){
+  removeFinger: function(playerName){
     //Remove finger
-    this.fingers = this.fingers.filter( function(f){return f.name != fingerName} );
+    this.fingers = this.fingers.filter( function(f){return f.playerName != playerName} );
   },
 
   //Sync finger with new data received from a client
   syncFinger: function(newFingerData){
+    let found = false;
     this.fingers.forEach( function(finger){
-      if(finger.name == newFingerData.name){
+      if(finger.playerName == newFingerData.playerName){
         finger.position = newFingerData.position;
         finger.angle = newFingerData.angle;
+        found = true;
       }
     });
+    if(!found){
+      this.addFinger(newFingerData);
+    }
   },
 
   //Detect if ball collides with any turtle
@@ -79,10 +84,9 @@ io.on('connection', function(client) {
   console.log('User connected');
 
   client.on('joinGame', function(finger){
-    console.log(finger.name + ' joined the game');
-    game.addFinger({name: finger.name, position: finger.position, angle: finger.angle});
-    client.emit('addFinger', { name: finger.name, position: finger.position, angle: finger.angle, isLocal: true } );
-    client.broadcast.emit('addFinger', { name: finger.name, position: finger.position, angle: finger.angle, isLocal: false} );
+    console.log(finger.playerName + ' joined the game');
+    client.emit('addPlayer', { playerName: finger.playerName, isLocal: true } );
+    client.broadcast.emit('addPlayer', { playerName: finger.playerName, isLocal: false } );
   });
 
   client.on('sync', function(data){

@@ -50,20 +50,20 @@ body{
   transform-origin: 50px 266px;
 }
 
-.fin-tl{
+#fin-top-left{
   top: -25px;
 }
 
-.fin-tr{
+#fin-top-right{
   top: -25px;
   right: 0px;
 }
 
-.fin-bl{
+#fin-bottom-left{
   top: 25px;
 }
 
-.fin-br{
+#fin-bottom-right{
   top: 25px;
   right: 0px;
 }

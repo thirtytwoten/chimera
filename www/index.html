@@ -21,13 +21,18 @@
     .info {
       display: none;
     }
+    #big-fin {
+      visibility: hidden;
+    }
   </style>
 </head>
 <body>
-  <div id="pool" class="pool"></div>
+  <div id="pool" class="pool">
+    <div id="big-fin" class="big-fin"></div>
+  </div>
   <div id="prompt" class="name-prompt">
     <div class="input-group">
-        <input id="finger-name" type="text" class="form-control" placeholder="your name" autocomplete="off">
+        <input id="player-name" type="text" class="form-control" placeholder="your name" autocomplete="off">
         <span class="input-group-btn">
           <input id="join" class="btn btn-primary" type="submit" value="Join the turtle">
         </span>

@@ -2,12 +2,10 @@ var WIDTH = 1000;
 var HEIGHT = 600;
 var socket = io.connect('localhost:8082');
 var game = new Game('#pool', WIDTH, HEIGHT, socket);
-var name = '';
-var position = 'TL';
-var angle = 0;
+var playerName = '';
 
-socket.on('addFinger', function(finger){
-  game.addFinger(finger.name, finger.position, finger.angle, finger.isLocal);
+socket.on('addPlayer', function(finger){
+  game.addPlayer(finger.playerName, finger.isLocal);
 });
 
 socket.on('sync', function(gameServerData){
@@ -25,15 +23,15 @@ socket.on('removeTurtle', function(turtleId){
 $(document).ready( function(){
 
   $('#join').click( function(){
-    name = $('#finger-name').val();
-    joinGame(name, position, angle, socket);
+    playerName = $('#player-name').val();
+    joinGame(playerName, socket);
   });
 
-  $('#finger-name').keyup( function(e){
-    name = $('#finger-name').val();
+  $('#player-name').keyup( function(e){
+    playerName = $('#player-name').val();
     var k = e.keyCode || e.which;
     if(k == 13){
-      joinGame(name, position, angle, socket);
+      joinGame(playerName, socket);
     }
   });
 
@@ -46,12 +44,12 @@ $(document).ready( function(){
 });
 
 $(window).on('beforeunload', function(){
-  socket.emit('leaveGame', name);
+  socket.emit('leaveGame', playerName);
 });
 
-function joinGame(name, position, angle, socket){
-  if(name != ''){
+function joinGame(playerName, socket){
+  if(playerName != ''){
     $('#prompt').hide();
-    socket.emit('joinGame', {name: name, position: position, angle: angle});
+    socket.emit('joinGame', {playerName});
   }
 }
