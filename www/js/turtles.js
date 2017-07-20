@@ -247,7 +247,3 @@ function scale(input, domain, range) {
   let percent = (clamped - domain[0]) / (domain[1] - domain[0]);
   return Math.floor(percent * (range[1] - range[0]) + range[0]);
 }
-
-function radians(degrees){
-  return degrees * Math.PI / 180;
-}
