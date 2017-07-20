@@ -52,19 +52,23 @@ body{
 }
 
 #fin-top-left{
+  filter: hue-rotate(0deg);
   top: -25px;
 }
 
 #fin-top-right{
+  filter: hue-rotate(30deg);
   top: -25px;
   right: 0px;
 }
 
 #fin-bottom-left{
+  filter: hue-rotate(60deg);
   top: 25px;
 }
 
 #fin-bottom-right{
+  filter: hue-rotate(90deg);
   top: 25px;
   right: 0px;
 }
