@@ -1,6 +1,5 @@
 var express = require('express');
 var app = express();
-var counter = 0;  //not really used
 
 app.use(express.static(__dirname + '/www'));
 var server = app.listen(process.env.PORT || 8082, function () {
@@ -14,31 +13,73 @@ function radians(degrees){
   return degrees * Math.PI / 180;
 }
 
+function highPassFilter(n) {
+  return n;
+  //return (Math.abs(n) < 0.2) ? 0 : n;
+}
+
 function GameServer(){
   this.fingers = [];
-  this.turtle = {
-    id: 'main-turtle',
-    x: 300,
-    y: 200,
-    baseAngle: 0,
-    hp: 100
-  }
   this.arena = {
     id: 'pool',
-    width: 1000,
-    height: 700,
+    width: 800,
+    height: 500,
     margin: 50,
+    updateRate: 50,
+  };
+  this.turtle = {
+    id: 'main-turtle',
+    x: this.arena.width/2,
+    y: this.arena.height/2,
+    baseAngle: 0,
+    moveAngle: 0,
+    moveX: 0,
+    moveY: 0,
+    hp: 100,
+  };
+  this.defaultTurtle = {
+    id: 'main-turtle',
+    x: this.arena.width/2,
+    y: this.arena.height/2,
+    baseAngle: 0,
+    moveAngle: 0,
+    moveX: 0,
+    moveY: 0,
+    hp: 100,
   }
+  this.moving = false;
+  this.interval = null;
+  this.counter = 0;
 }
 
 GameServer.prototype = {
 
+  stop: function() {
+    clearInterval(this.interval);
+    this.counter = 0;
+  },
+
+  go: function() {
+    this.interval = setInterval(function(){
+      game.calcMovement();
+      game.moveTurtle();
+      //console.log(++game.counter);
+    }, game.arena.updateRate);
+  },
+
   addFinger: function(finger){
     this.fingers.push(finger);
+    if(this.fingers.length === 1){
+      this.go();
+    }
   },
 
   removeFinger: function(playerName){
     this.fingers = this.fingers.filter( function(f){return f.playerName != playerName} );
+    if(this.fingers.length === 0){
+      Object.assign(this.turtle, this.defaultTurtle);
+      this.stop();
+    };
   },
 
   //Sync finger with new data received from a client
@@ -51,33 +92,36 @@ GameServer.prototype = {
     }
   },
 
-  setPosition: function(moveAngle, moveX, moveY) {
-    this.turtle.baseAngle += moveAngle;
+  moveTurtle: function() {
+    this.turtle.baseAngle += this.turtle.moveAngle;
     this.turtle.baseAngle %= 360;
-    if(this.turtle.x + moveX > (0 + this.arena.margin) && (this.turtle.x + moveX) < (this.arena.width - this.arena.margin)){
-      this.turtle.x += moveX;
+    if(this.turtle.x + this.turtle.moveX > (0 + this.arena.margin) && (this.turtle.x + this.turtle.moveX) < (this.arena.width - this.arena.margin)){
+      this.turtle.x += this.turtle.moveX;
     }
-    if(this.turtle.y + moveY > (0 + this.arena.margin) && (this.turtle.y + moveY) < (this.arena.height - this.arena.margin)){
-      this.turtle.y += moveY;
+    if(this.turtle.y + this.turtle.moveY > (0 + this.arena.margin) && (this.turtle.y + this.turtle.moveY) < (this.arena.height - this.arena.margin)){
+      this.turtle.y += this.turtle.moveY;
     }
   },
 
-  moveTurtle: function(){
+  calcMovement: function(){
     let leftSide = 0, rightSide = 0;
     let directionalSpeed = 10;
     let rotationSpeed = 10;
     this.fingers.forEach(function(f){
       if(f.position.includes('left')){
-        leftSide += Math.sin(radians(f.angle));
+        leftSide += Math.sin(radians(-f.angle));
       } else {
-        rightSide = Math.sin(radians(-f.angle));
+        rightSide = Math.sin(radians(f.angle));
       }
     });
-    let magnitude = (leftSide + rightSide) * directionalSpeed;
-    let moveAngle = (leftSide - rightSide) * rotationSpeed; //positive: turn left, negative: turn right
+    let magnitude = highPassFilter((leftSide + rightSide)) * directionalSpeed;
+    let moveAngle = highPassFilter((leftSide - rightSide)) * rotationSpeed; //positive: turn left, negative: turn right
+    //should set baseAngle before moveX&Y
     let moveX = Math.cos(radians(this.turtle.baseAngle)) * magnitude;
     let moveY = Math.sin(radians(this.turtle.baseAngle)) * magnitude;
-    this.setPosition(moveAngle, moveX, moveY);
+    this.turtle.moveAngle = moveAngle;
+    this.turtle.moveX = moveX;
+    this.turtle.moveY = moveY;
   },
 
   hurtTurtle: function(turtle){
@@ -107,6 +151,13 @@ var game = new GameServer();
 io.on('connection', function(client) {
   console.log('User connected');
 
+  let syncRate = 100; //game.arena.updateRate;
+  setInterval(function(){
+    client.emit('sync', game.getData());
+    client.broadcast.emit('sync', game.getData());
+    //console.log(++game.counter);
+  }, syncRate);
+
   //sync existing information to client
   client.emit('sync', game.getData());
 
@@ -120,13 +171,10 @@ io.on('connection', function(client) {
   client.on('sync', function(data){
     if(data.finger != undefined){
       game.syncFinger(data.finger);
-      game.moveTurtle();
       //Broadcast data to clients
-      client.emit('sync', game.getData());
-      client.broadcast.emit('sync', game.getData());
+      // client.emit('sync', game.getData());
+      // client.broadcast.emit('sync', game.getData());
     }
-
-    counter ++;
   });
 
   client.on('leaveGame', function(fingerName){
