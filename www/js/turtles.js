@@ -1,8 +1,5 @@
 const DEBUG = true;
 const INTERVAL = 50;
-const ROTATION_SPEED = 5;
-const ARENA_MARGIN = 30;
-const TURTLE_INIT_HP = 100;
 const POSITIONS = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
 
 function Finger({
@@ -56,14 +53,12 @@ Fingers.bigFinger = {
   }
 }
 
-function Game(arenaSelector, turtleId, w, h, socket){
+function Game(turtleId, socket){
   this.update = false;
-  this.width = w;
-  this.height = h;
-  this.mx = null;
-  this.$arena = $(arenaSelector);
-  this.$arena.css('width', w);
-  this.$arena.css('height', h);
+  this.width = 0;
+  this.height = 0;
+  this.mx = 0;
+  this.$arena = null;
   this.localFinger = null;
   this.bigFinger = Fingers.bigFinger;
   this.turtle = null;
@@ -77,11 +72,20 @@ Game.prototype = {
     for (i in POSITIONS){
       Fingers.push(new Finger({position: POSITIONS[i]}));
     }
+    this.buildPool(serverData.arena);
     this.turtle = new Turtle(serverData.turtle);
     this.setControls();
     setInterval(function(){
       localGame.mainLoop();
     }, INTERVAL);
+  },
+
+  buildPool: function(arena) {
+    this.width = arena.width;
+    this.height = arena.height;
+    this.$arena = $('#'+arena.id);
+    this.$arena.css('width', arena.width);
+    this.$arena.css('height', arena.height);
   },
 
   setControls: function(){
@@ -148,7 +152,6 @@ Game.prototype = {
   },
 
   refresh: function() {
-    //this.turtle.move();
     this.turtle.refresh();
     this.refreshFingers();
   },
@@ -223,25 +226,6 @@ Turtle.prototype = {
 
     this.$info.find('.hp-bar').css('width', this.hp + 'px');
     this.$info.find('.hp-bar').css('background-color', getGreenToRed(this.hp));
-  },
-
-  move: function(){
-    if(this.dead){
-      return;
-    }
-
-    var moveX = 0;//Math.cos(radians(this.finAngle));
-    var moveY = Math.sin(radians(localGame.localAngle));
-
-    moveX = this.speed * moveX;
-    moveY = this.speed * moveY;
-
-    if(this.x + moveX > (0 + ARENA_MARGIN) && (this.x + moveX) < (localGame.$arena.width() - ARENA_MARGIN)){
-      this.x += moveX;
-    }
-    if(this.y + moveY > (0 + ARENA_MARGIN) && (this.y + moveY) < (localGame.$arena.height() - ARENA_MARGIN)){
-      this.y += moveY;
-    }
   }
 
 }
@@ -250,10 +234,6 @@ function debug(msg){
   if(DEBUG){
     console.log(msg);
   }
-}
-
-function getRandomInt(min, max) {
-  return Math.floor(Math.random() * (max - min)) + min;
 }
 
 function getGreenToRed(percent){

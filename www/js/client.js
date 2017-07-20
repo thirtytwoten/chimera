@@ -1,7 +1,5 @@
-var WIDTH = 600;
-var HEIGHT = 300;
 var socket = io.connect('localhost:8082');
-var localGame = new Game('#pool', 'main-turtle', WIDTH, HEIGHT, socket);
+var localGame = new Game('main-turtle', socket);
 var playerName = '';
 var serverPing = false;
 

@@ -23,6 +23,12 @@ function GameServer(){
     baseAngle: 0,
     hp: 100
   }
+  this.arena = {
+    id: 'pool',
+    width: 1000,
+    height: 700,
+    margin: 50,
+  }
 }
 
 GameServer.prototype = {
@@ -45,6 +51,17 @@ GameServer.prototype = {
     }
   },
 
+  setPosition: function(moveAngle, moveX, moveY) {
+    this.turtle.baseAngle += moveAngle;
+    this.turtle.baseAngle %= 360;
+    if(this.turtle.x + moveX > (0 + this.arena.margin) && (this.turtle.x + moveX) < (this.arena.width - this.arena.margin)){
+      this.turtle.x += moveX;
+    }
+    if(this.turtle.y + moveY > (0 + this.arena.margin) && (this.turtle.y + moveY) < (this.arena.height - this.arena.margin)){
+      this.turtle.y += moveY;
+    }
+  },
+
   moveTurtle: function(){
     let leftSide = 0, rightSide = 0;
     let directionalSpeed = 10;
@@ -57,11 +74,10 @@ GameServer.prototype = {
       }
     });
     let magnitude = (leftSide + rightSide) * directionalSpeed;
-    this.turtle.baseAngle += (leftSide - rightSide) * rotationSpeed; //positive: turn left, negative: turn right
-    this.turtle.baseAngle %= 360;
-    this.turtle.x += Math.cos(radians(this.turtle.baseAngle)) * magnitude;
-    this.turtle.y += Math.sin(radians(this.turtle.baseAngle)) * magnitude;
-    console.log(`x: ${this.turtle.x}, y: ${this.turtle.y}, baseAngle ${this.turtle.baseAngle}`);
+    let moveAngle = (leftSide - rightSide) * rotationSpeed; //positive: turn left, negative: turn right
+    let moveX = Math.cos(radians(this.turtle.baseAngle)) * magnitude;
+    let moveY = Math.sin(radians(this.turtle.baseAngle)) * magnitude;
+    this.setPosition(moveAngle, moveX, moveY);
   },
 
   hurtTurtle: function(turtle){
@@ -72,6 +88,7 @@ GameServer.prototype = {
     var gameData = {};
     gameData.fingers = this.fingers;
     gameData.turtle = this.turtle;
+    gameData.arena = this.arena;
     return gameData;
   },
 
