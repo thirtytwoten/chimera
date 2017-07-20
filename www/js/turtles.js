@@ -120,10 +120,8 @@ Game.prototype = {
       this.update = false;
       //send data to server about local finger
       this.sendData();
-      //move local tank
-      this.refreshFingers();
     }
-    this.turtle.move();
+    this.refresh();
   },
 
   sendData: function(){
@@ -138,6 +136,7 @@ Game.prototype = {
     if(init){
       this.init(serverData);
     }
+    Object.assign(this.turtle, serverData.turtle);
     serverData.fingers.forEach(function(serverFinger){
       let clientFinger = Fingers.getFingerAtPosition(serverFinger.position);
       Object.assign(clientFinger, serverFinger);
@@ -146,6 +145,12 @@ Game.prototype = {
         localGame.turtle.addFin(clientFinger);
       }
     });
+  },
+
+  refresh: function() {
+    //this.turtle.move();
+    this.turtle.refresh();
+    this.refreshFingers();
   },
 
   refreshFingers: function() {
@@ -172,9 +177,7 @@ function Turtle({id, x, y, hp}){
   this.speed = 5;
   this.w = 60;
   this.h = 80;
-  this.baseAngle = 0;//getRandomInt(0, 360);
-  //Make multiple of rotation amount
-  this.baseAngle -= (this.baseAngle % ROTATION_SPEED);
+  this.baseAngle = 0;
   this.x = x;
   this.y = y;
   this.hp = hp;
@@ -190,12 +193,6 @@ Turtle.prototype = {
     this.$body = $('#' + this.id);
     this.$body.css('width', this.w);
     this.$body.css('height', this.h);
-
-    // already done in refresh
-    // this.$body.css('-webkit-transform', 'rotateZ(' + this.baseAngle + 'deg)');
-    // this.$body.css('-moz-transform', 'rotateZ(' + this.baseAngle + 'deg)');
-    // this.$body.css('-o-transform', 'rotateZ(' + this.baseAngle + 'deg)');
-    // this.$body.css('transform', 'rotateZ(' + this.baseAngle + 'deg)');
 
     localGame.$arena.append('<div id="info-' + this.id + '" class="info"></div>');
     this.$info = $('#info-' + this.id);
@@ -232,7 +229,6 @@ Turtle.prototype = {
     if(this.dead){
       return;
     }
-    //TODO: aggregate fin values to get base speed and rotation
 
     var moveX = 0;//Math.cos(radians(this.finAngle));
     var moveY = Math.sin(radians(localGame.localAngle));
@@ -246,8 +242,6 @@ Turtle.prototype = {
     if(this.y + moveY > (0 + ARENA_MARGIN) && (this.y + moveY) < (localGame.$arena.height() - ARENA_MARGIN)){
       this.y += moveY;
     }
-    
-    this.refresh();
   }
 
 }

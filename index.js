@@ -10,12 +10,17 @@ var server = app.listen(process.env.PORT || 8082, function () {
 
 var io = require('socket.io')(server);
 
+function radians(degrees){
+  return degrees * Math.PI / 180;
+}
+
 function GameServer(){
   this.fingers = [];
   this.turtle = {
     id: 'main-turtle',
     x: 300,
     y: 200,
+    baseAngle: 0,
     hp: 100
   }
 }
@@ -38,6 +43,25 @@ GameServer.prototype = {
     } else {
       this.addFinger(clientFinger);
     }
+  },
+
+  moveTurtle: function(){
+    let leftSide = 0, rightSide = 0;
+    let directionalSpeed = 10;
+    let rotationSpeed = 10;
+    this.fingers.forEach(function(f){
+      if(f.position.includes('left')){
+        leftSide += Math.sin(radians(f.angle));
+      } else {
+        rightSide = Math.sin(radians(-f.angle));
+      }
+    });
+    let magnitude = (leftSide + rightSide) * directionalSpeed;
+    this.turtle.baseAngle += (leftSide - rightSide) * rotationSpeed; //positive: turn left, negative: turn right
+    this.turtle.baseAngle %= 360;
+    this.turtle.x += Math.cos(radians(this.turtle.baseAngle)) * magnitude;
+    this.turtle.y += Math.sin(radians(this.turtle.baseAngle)) * magnitude;
+    console.log(`x: ${this.turtle.x}, y: ${this.turtle.y}, baseAngle ${this.turtle.baseAngle}`);
   },
 
   hurtTurtle: function(turtle){
@@ -73,15 +97,17 @@ io.on('connection', function(client) {
     console.log(finger.playerName + ' joined the game');
     client.emit('addPlayer', { playerName: finger.playerName, isLocal: true } );
     //client.broadcast.emit('addPlayer', { playerName: finger.playerName, isLocal: false } );
+    //^should be picked up in sync calls
   });
 
   client.on('sync', function(data){
     if(data.finger != undefined){
       game.syncFinger(data.finger);
+      game.moveTurtle();
+      //Broadcast data to clients
+      client.emit('sync', game.getData());
+      client.broadcast.emit('sync', game.getData());
     }
-    //Broadcast data to clients
-    client.emit('sync', game.getData());
-    client.broadcast.emit('sync', game.getData());
 
     counter ++;
   });
@@ -93,7 +119,3 @@ io.on('connection', function(client) {
   });
 
 });
-
-function getRandomInt(min, max) {
-  return Math.floor(Math.random() * (max - min)) + min;
-}
