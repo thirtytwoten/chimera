@@ -15,11 +15,15 @@ function Finger({
   this.occupied = occupied;
   this.isLocal = isLocal;
   this.id = 'fin-' + this.position;
+  this.cssDegOffset = this.calcDegreeOffset();
 }
 
 Finger.prototype = {
   getDomElement: function(){
     return $(this.id);
+  },
+  calcDegreeOffset: function() {
+    return 90 * (this.position.includes('left') ? -1 : 1);
   },
   slim: function(){
     return {
@@ -48,6 +52,7 @@ Fingers.occupied = function() {
 Fingers.bigFinger = {
   angle: 0,
   id: 'big-fin',
+  cssDegOffset: 0,
   show: function(){
     $('#'+this.id).css('visibility', 'visible');
   }
@@ -98,13 +103,15 @@ Game.prototype = {
 
   setLocalAngle: function(){
     let domain = [0, this.width];
-    let range = [-90, 90];
+    let range = [-80, 80];
     if(this.localFinger){
       this.localAngle = scale(this.mx, domain, range);
       if(this.localAngle != this.localFinger.angle){
         this.localFinger.angle = this.localAngle;
         this.bigFinger.angle = this.localAngle;
         this.update = true;
+      } else {
+        this.update = false;
       }
     }
   },
@@ -162,7 +169,7 @@ Game.prototype = {
     drawnFingers.forEach(function(finger){
       $fin = $('#' + finger.id);
       if($fin.length > 0){
-        let deg = finger.angle;
+        let deg = finger.angle + finger.cssDegOffset;
         $fin.css('-webkit-transform', 'rotateZ(' + deg + 'deg)');
         $fin.css('-moz-transform', 'rotateZ(' + deg + 'deg)');
         $fin.css('-o-transform', 'rotateZ(' + deg + 'deg)');
