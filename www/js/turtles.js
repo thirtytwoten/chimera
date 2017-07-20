@@ -221,8 +221,8 @@ Turtle.prototype = {
   },
 
   refresh: function(){
-    this.$body.css('left', this.x - 30 + 'px');
-    this.$body.css('top', this.y - 40 + 'px');
+    this.$body.css('left', this.x + 'px');
+    this.$body.css('top', this.y + 'px');
     this.$body.css('-webkit-transform', 'rotateZ(' + this.baseAngle + 'deg)');
     this.$body.css('-moz-transform', 'rotateZ(' + this.baseAngle + 'deg)');
     this.$body.css('-o-transform', 'rotateZ(' + this.baseAngle + 'deg)');
