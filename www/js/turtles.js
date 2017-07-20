@@ -5,34 +5,6 @@ const ARENA_MARGIN = 30;
 const TURTLE_INIT_HP = 100;
 const POSITIONS = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
 
-let Fingers = [];
-for (i in POSITIONS){
-  Fingers.push(new Finger({position: POSITIONS[i]}));
-}
-
-Fingers.getFingerAtPosition = function(strOrIndex){
-  let index = Number.isInteger(strOrIndex) ? strOrIndex : POSITIONS.indexOf(strOrIndex);
-  return (index >= 0 && index < POSITIONS.length) ? this[index] : null;
-}
-Fingers.getOpenFinger = function() {
-  return this.find(function(finger){
-    return !finger.occupied;
-  });
-}
-Fingers.occupied = function() {
-  return this.filter(function(finger){
-    return finger.occupied;
-  });
-}
-Fingers.bigFinger = {
-  position: 'big-fin',
-  angle: 0,
-  $div: $('#big-fin'),
-  update: function() {
-
-  }
-}
-
 function Finger({
   playerName = '',
   position = '',
@@ -51,11 +23,41 @@ function Finger({
 Finger.prototype = {
   getDomElement: function(){
     return $(this.id);
+  },
+  slim: function(){
+    return {
+      playerName: this.playerName,
+      position: this.position,
+      angle: this.angle
+    };
+  }
+}
+
+let Fingers = [];
+Fingers.getFingerAtPosition = function(strOrIndex){
+  let index = Number.isInteger(strOrIndex) ? strOrIndex : POSITIONS.indexOf(strOrIndex);
+  return (index >= 0 && index < POSITIONS.length) ? this[index] : null;
+}
+Fingers.getOpenFinger = function() {
+  return this.find(function(finger){
+    return !finger.occupied;
+  });
+}
+Fingers.occupied = function() {
+  return this.filter(function(finger){
+    return finger.occupied;
+  });
+}
+Fingers.bigFinger = {
+  angle: 0,
+  id: 'big-fin',
+  show: function(){
+    $('#'+this.id).css('visibility', 'visible');
   }
 }
 
 function Game(arenaSelector, turtleId, w, h, socket){
-  this.update = true;
+  this.update = false;
   this.width = w;
   this.height = h;
   this.mx = null;
@@ -72,6 +74,9 @@ function Game(arenaSelector, turtleId, w, h, socket){
 Game.prototype = {
 
   init: function(serverData){
+    for (i in POSITIONS){
+      Fingers.push(new Finger({position: POSITIONS[i]}));
+    }
     this.turtle = new Turtle(serverData.turtle);
     this.setControls();
     setInterval(function(){
@@ -92,34 +97,39 @@ Game.prototype = {
     let range = [-90, 90];
     if(this.localFinger){
       this.localAngle = scale(this.mx, domain, range);
-      this.localFinger.angle = this.localAngle;
-      this.bigFinger.angle = this.localAngle;
+      if(this.localAngle != this.localFinger.angle){
+        this.localFinger.angle = this.localAngle;
+        this.bigFinger.angle = this.localAngle;
+        this.update = true;
+      }
     }
   },
 
   addPlayer: function(playerName, isLocal){
-    let newFinger = Object.assign(Fingers.getOpenFinger(), {playerName, isLocal, occupied: true});
+    //would I ever need to do anything if !local?
     if(isLocal){
+      let newFinger = Object.assign(Fingers.getOpenFinger(), {playerName, isLocal, occupied: true});
+      this.turtle.addFin(newFinger);
       this.localFinger = newFinger;
-      this.bigFinger.$div.css('visibility', 'visible');
+      this.bigFinger.show();
     }
-    newFinger.$div = this.turtle.addFin(newFinger);
   },
 
   mainLoop: function(){
     if(this.update){
+      this.update = false;
       //send data to server about local finger
       this.sendData();
       //move local tank
-      this.turtle.move();
       this.refreshFingers();
     }
+    this.turtle.move();
   },
 
   sendData: function(){
     //Send local data to server
     var gameData = {};
-    gameData.finger = this.localFinger;
+    gameData.finger = this.localFinger.slim();
     //gameData.turtle = this.turtle;
     this.socket.emit('sync', gameData);
   },
@@ -130,7 +140,11 @@ Game.prototype = {
     }
     serverData.fingers.forEach(function(serverFinger){
       let clientFinger = Fingers.getFingerAtPosition(serverFinger.position);
-      Object.assign(clientFinger, serverFinger, {occupied: true});
+      Object.assign(clientFinger, serverFinger);
+      if(!clientFinger.occupied){
+        clientFinger.occupied = true;
+        localGame.turtle.addFin(clientFinger);
+      }
     });
   },
 
@@ -138,13 +152,16 @@ Game.prototype = {
     let drawnFingers = Fingers.occupied();
     drawnFingers.push(this.bigFinger);
     drawnFingers.forEach(function(finger){
-      if($(finger.$div.selector).length === 0){ finger.$div = localGame.turtle.addFin(finger) }
-      finger.$div = $(finger.$div.selector); //TODO fix $div selection bug @ addFin
-      let deg = finger.angle;
-      finger.$div.css('-webkit-transform', 'rotateZ(' + deg + 'deg)');
-      finger.$div.css('-moz-transform', 'rotateZ(' + deg + 'deg)');
-      finger.$div.css('-o-transform', 'rotateZ(' + deg + 'deg)');
-      finger.$div.css('transform', 'rotateZ(' + deg + 'deg)');
+      $fin = $('#' + finger.id);
+      if($fin.length > 0){
+        let deg = finger.angle;
+        $fin.css('-webkit-transform', 'rotateZ(' + deg + 'deg)');
+        $fin.css('-moz-transform', 'rotateZ(' + deg + 'deg)');
+        $fin.css('-o-transform', 'rotateZ(' + deg + 'deg)');
+        $fin.css('transform', 'rotateZ(' + deg + 'deg)');
+      } else {
+        console.log(finger);
+      }
     });
   }
 }
@@ -189,11 +206,7 @@ Turtle.prototype = {
   },
 
   addFin: function(finger) {
-    var id = 'fin-' + finger.position;
-    this.$body.append(`<div id="${id}" class="fin"></div>`);
-    // TODO fix this bug
-    let $newFin = $('#' + id);
-    return $newFin;
+    this.$body.append(`<div id="${finger.id}" class="fin"></div>`);
   },
 
   removeFin: function(finger) {
@@ -258,7 +271,7 @@ function getGreenToRed(percent){
 function scale(input, domain, range) {
   let clamped = input <= domain[0] ? domain[0] : input >= domain[1] ? domain[1] : input;
   let percent = (clamped - domain[0]) / (domain[1] - domain[0]);
-  return percent * (range[1] - range[0]) + range[0];
+  return Math.floor(percent * (range[1] - range[0]) + range[0]);
 }
 
 function radians(degrees){

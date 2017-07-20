@@ -31,17 +31,12 @@ GameServer.prototype = {
   },
 
   //Sync finger with new data received from a client
-  syncFinger: function(newFingerData){
-    let found = false;
-    this.fingers.forEach( function(finger){
-      if(finger.playerName == newFingerData.playerName){
-        finger.position = newFingerData.position;
-        finger.angle = newFingerData.angle;
-        found = true;
-      }
-    });
-    if(!found){
-      this.addFinger(newFingerData);
+  syncFinger: function(clientFinger){
+    let serverFinger = this.fingers.find(function(f){ return f.position == clientFinger.position});
+    if(serverFinger) {
+      Object.assign(serverFinger, clientFinger);
+    } else {
+      this.addFinger(clientFinger);
     }
   },
 
@@ -77,7 +72,7 @@ io.on('connection', function(client) {
   client.on('joinGame', function(finger){
     console.log(finger.playerName + ' joined the game');
     client.emit('addPlayer', { playerName: finger.playerName, isLocal: true } );
-    client.broadcast.emit('addPlayer', { playerName: finger.playerName, isLocal: false } );
+    //client.broadcast.emit('addPlayer', { playerName: finger.playerName, isLocal: false } );
   });
 
   client.on('sync', function(data){
