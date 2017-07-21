@@ -13,11 +13,6 @@ function radians(degrees){
   return degrees * Math.PI / 180;
 }
 
-function highPassFilter(n) {
-  return n;
-  //return (Math.abs(n) < 0.2) ? 0 : n;
-}
-
 function GameServer(){
   this.fingers = [];
   this.arena = {
@@ -93,8 +88,6 @@ GameServer.prototype = {
   },
 
   moveTurtle: function() {
-    this.turtle.baseAngle += this.turtle.moveAngle;
-    this.turtle.baseAngle %= 360;
     if(this.turtle.x + this.turtle.moveX > (0 + this.arena.margin) && (this.turtle.x + this.turtle.moveX) < (this.arena.width - this.arena.margin)){
       this.turtle.x += this.turtle.moveX;
     }
@@ -105,18 +98,19 @@ GameServer.prototype = {
 
   calcMovement: function(){
     let leftSide = 0, rightSide = 0;
-    let directionalSpeed = 10;
-    let rotationSpeed = 10;
+    let directionalSpeed = 2;
+    let rotationSpeed = 1;
     this.fingers.forEach(function(f){
       if(f.position.includes('left')){
-        leftSide += Math.sin(radians(-f.angle));
+        leftSide += Math.sin(radians(f.angle));
       } else {
-        rightSide = Math.sin(radians(f.angle));
+        rightSide = Math.sin(radians(-f.angle));
       }
     });
-    let magnitude = highPassFilter((leftSide + rightSide)) * directionalSpeed;
-    let moveAngle = highPassFilter((leftSide - rightSide)) * rotationSpeed; //positive: turn left, negative: turn right
-    //should set baseAngle before moveX&Y
+    let magnitude = (leftSide + rightSide) * directionalSpeed;
+    let moveAngle = (leftSide - rightSide) * rotationSpeed; //positive: right turn; negative: left turn
+    this.turtle.baseAngle += moveAngle;
+    this.turtle.baseAngle %= 360;
     let moveX = Math.cos(radians(this.turtle.baseAngle)) * magnitude;
     let moveY = Math.sin(radians(this.turtle.baseAngle)) * magnitude;
     this.turtle.moveAngle = moveAngle;

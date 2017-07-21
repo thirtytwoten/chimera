@@ -25,7 +25,10 @@ body{
 .turtle{
   position: absolute;
   background-repeat: no-repeat;
-  background-position: -10px 0;
+  width: 80px;
+  height: 60px;
+  background-position: 0;
+/*  background-position: -10px 0;*/
   transform-origin: center;
 }
 
@@ -53,24 +56,26 @@ body{
 
 #fin-top-left{
   filter: hue-rotate(0deg);
-  top: -25px;
+  right: 5px;
+  top: -35px;
 }
 
 #fin-top-right{
   filter: hue-rotate(30deg);
-  top: -25px;
-  right: 0px;
+  right: 5px;
+  bottom: 15px;
 }
 
 #fin-bottom-left{
   filter: hue-rotate(60deg);
-  top: 25px;
+  left: 5px;
+  top: -35px;
 }
 
 #fin-bottom-right{
   filter: hue-rotate(90deg);
-  top: 25px;
-  right: 0px;
+  left: 5px;
+  bottom: 15px;
 }
 
 .info{
@@ -132,13 +137,13 @@ body{
 .turtle-selection li.selected{
   border: 2px solid #158cba;
   -webkit-border-radius: 5px;
-     -moz-border-radius: 5px;
-     -o-border-radius: 5px;
-      border-radius: 5px;
+  -moz-border-radius: 5px;
+  -o-border-radius: 5px;
+  border-radius: 5px;
   border-radius: 5px;
 }
 
 /* skins */
 .turtle1{
-  background-image: url(../img/turtle-base.png);
+  background-image: url(../img/turtle-base-hrz.png);
 }

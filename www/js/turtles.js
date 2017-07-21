@@ -23,7 +23,7 @@ Finger.prototype = {
     return $(this.id);
   },
   calcDegreeOffset: function() {
-    return 90 * (this.position.includes('left') ? -1 : 1);
+    return this.position.includes('right') ? 180 : 0;
   },
   slim: function(){
     return {
@@ -187,7 +187,7 @@ function Turtle({id, x, y, hp}){
   this.speed = 5;
   this.w = 60;
   this.h = 80;
-  this.baseAngle = 0;
+  this.baseAngle = 90;
   this.x = x;
   this.y = y;
   this.hp = hp;
@@ -201,8 +201,8 @@ Turtle.prototype = {
   materialize: function(){
     localGame.$arena.append('<div id="' + this.id + '" class="turtle turtle1"></div>');
     this.$body = $('#' + this.id);
-    this.$body.css('width', this.w);
-    this.$body.css('height', this.h);
+    // this.$body.css('width', this.w);
+    // this.$body.css('height', this.h);
 
     localGame.$arena.append('<div id="info-' + this.id + '" class="info"></div>');
     this.$info = $('#info-' + this.id);
@@ -228,11 +228,11 @@ Turtle.prototype = {
     this.$body.css('-o-transform', 'rotateZ(' + this.baseAngle + 'deg)');
     this.$body.css('transform', 'rotateZ(' + this.baseAngle + 'deg)');
 
-    this.$info.css('left', (this.x) + 'px');
-    this.$info.css('top', (this.y) + 'px');
+    // this.$info.css('left', (this.x) + 'px');
+    // this.$info.css('top', (this.y) + 'px');
 
-    this.$info.find('.hp-bar').css('width', this.hp + 'px');
-    this.$info.find('.hp-bar').css('background-color', getGreenToRed(this.hp));
+    // this.$info.find('.hp-bar').css('width', this.hp + 'px');
+    // this.$info.find('.hp-bar').css('background-color', getGreenToRed(this.hp));
   }
 
 }
