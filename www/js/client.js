@@ -1,7 +1,9 @@
-var socket = io.connect('localhost:8082');
-var localGame = new Game('main-turtle', socket);
-var playerName = '';
-var serverPing = false;
+/* global io, Game, $ */
+let hostName = window.location.hostname;
+let socket = io.connect(hostName);
+let localGame = new Game('main-turtle', socket);
+let playerName = '';
+let serverPing = false;
 
 socket.on('addPlayer', function(finger){
   localGame.addPlayer(finger.playerName, finger.isLocal);
@@ -9,7 +11,7 @@ socket.on('addPlayer', function(finger){
 
 socket.on('removeFinger', function(finger){
   //TODO
-})
+});
 
 socket.on('sync', function(gameServerData){
   localGame.receiveData(gameServerData, !serverPing);

@@ -1,3 +1,5 @@
+'use strict'
+
 var express = require('express');
 var app = express();
 
@@ -41,7 +43,7 @@ function GameServer(){
     moveX: 0,
     moveY: 0,
     hp: 100,
-  }
+  };
   this.moving = false;
   this.interval = null;
   this.counter = 0;
@@ -74,7 +76,7 @@ GameServer.prototype = {
     if(this.fingers.length === 0){
       Object.assign(this.turtle, this.defaultTurtle);
       this.stop();
-    };
+    }
   },
 
   //Sync finger with new data received from a client
@@ -136,7 +138,7 @@ GameServer.prototype = {
     });
   }
 
-}
+};
 
 var game = new GameServer();
 

@@ -1,3 +1,4 @@
+/* global $, localGame*/
 const DEBUG = true;
 const INTERVAL = 50;
 const POSITIONS = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
@@ -32,23 +33,23 @@ Finger.prototype = {
       angle: this.angle
     };
   }
-}
+};
 
 let Fingers = [];
 Fingers.getFingerAtPosition = function(strOrIndex){
   let index = Number.isInteger(strOrIndex) ? strOrIndex : POSITIONS.indexOf(strOrIndex);
   return (index >= 0 && index < POSITIONS.length) ? this[index] : null;
-}
+};
 Fingers.getOpenFinger = function() {
   return this.find(function(finger){
     return !finger.occupied;
   });
-}
+};
 Fingers.occupied = function() {
   return this.filter(function(finger){
     return finger.occupied;
   });
-}
+};
 Fingers.bigFinger = {
   angle: 0,
   id: 'big-fin',
@@ -56,7 +57,7 @@ Fingers.bigFinger = {
   show: function(){
     $('#'+this.id).css('visibility', 'visible');
   }
-}
+};
 
 function Game(turtleId, socket){
   this.update = false;
@@ -74,7 +75,7 @@ function Game(turtleId, socket){
 Game.prototype = {
 
   init: function(serverData){
-    for (i in POSITIONS){
+    for (let i in POSITIONS){
       Fingers.push(new Finger({position: POSITIONS[i]}));
     }
     this.buildPool(serverData.arena);
@@ -167,7 +168,7 @@ Game.prototype = {
     let drawnFingers = Fingers.occupied();
     drawnFingers.push(this.bigFinger);
     drawnFingers.forEach(function(finger){
-      $fin = $('#' + finger.id);
+      let $fin = $('#' + finger.id);
       if($fin.length > 0){
         let deg = finger.angle + finger.cssDegOffset;
         $fin.css('-webkit-transform', 'rotateZ(' + deg + 'deg)');
@@ -175,11 +176,11 @@ Game.prototype = {
         $fin.css('-o-transform', 'rotateZ(' + deg + 'deg)');
         $fin.css('transform', 'rotateZ(' + deg + 'deg)');
       } else {
-        console.log(finger);
+        debug(finger);
       }
     });
   }
-}
+};
 
 function Turtle({id, x, y, hp}){
   this.id = id;
@@ -235,7 +236,7 @@ Turtle.prototype = {
     // this.$info.find('.hp-bar').css('background-color', getGreenToRed(this.hp));
   }
 
-}
+};
 
 function debug(msg){
   if(DEBUG){
@@ -243,11 +244,11 @@ function debug(msg){
   }
 }
 
-function getGreenToRed(percent){
-  r = percent<50 ? 255 : Math.floor(255-(percent*2-100)*255/100);
-  g = percent>50 ? 255 : Math.floor((percent*2)*255/100);
-  return 'rgb('+r+','+g+',0)';
-}
+// function getGreenToRed(percent){
+//   let r = percent<50 ? 255 : Math.floor(255-(percent*2-100)*255/100);
+//   let g = percent>50 ? 255 : Math.floor((percent*2)*255/100);
+//   return 'rgb('+r+','+g+',0)';
+// }
 
 function scale(input, domain, range) {
   let clamped = input <= domain[0] ? domain[0] : input >= domain[1] ? domain[1] : input;
