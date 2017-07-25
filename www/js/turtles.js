@@ -150,6 +150,8 @@ Game.prototype = {
       let newFinger = Object.assign(Fingers.getOpenFinger(), {playerName, isLocal, occupied: true});
       this.turtle.addFin(newFinger);
       this.localFinger = newFinger;
+      let filter = $(`#${newFinger.id}`).css("filter");
+      $(`#big-fin`).css("filter", filter);
       this.bigFinger.show();
     }
   },
