@@ -1,5 +1,3 @@
-'use strict'
-
 let express = require('express');
 let app = express();
 
@@ -27,8 +25,7 @@ function GameServer(){
     baseAngle: 0,
     moveAngle: 0,
     moveX: 0,
-    moveY: 0,
-    hp: 100,
+    moveY: 0
   };
   this.defaultTurtle = {
     id: 'main-turtle',
@@ -116,10 +113,6 @@ GameServer.prototype = {
     this.turtle.moveY = moveY;
   },
 
-  hurtTurtle: function(turtle){
-    turtle.hp -= 2;
-  },
-
   getData: function(){
     var gameData = {};
     gameData.fingers = this.fingers;
@@ -161,7 +154,7 @@ io.on('connection', function(client) {
   });
 
   client.on('sync', function(data){
-    if(data.finger != undefined){
+    if(data.finger !== undefined){
       game.syncFinger(data.finger);
       //Broadcast data to clients
       // client.emit('sync', game.getData());

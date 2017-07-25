@@ -1,4 +1,6 @@
 /* global $, localGame*/
+'use strict';
+
 const DEBUG = true;
 const INTERVAL = 50;
 const POSITIONS = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
@@ -56,9 +58,9 @@ Fingers.getFingerAtPosition = function(strOrIndex){
 };
 Fingers.getFingerByName = function(playerName) {
   return this.find(function(finger){
-    return finger.playerName = playerName;
+    return finger.playerName == playerName;
   });
-},
+};
 Fingers.getOpenFinger = function() {
   return this.find(function(finger){
     return !finger.occupied;
@@ -113,7 +115,7 @@ Game.prototype = {
 
   setControls: function(){
     var t = this;
-    $(document).mousemove( function(e){ //Detect mouse for pointing finger
+    $(document).mousemove( function(e){
       t.mx = e.pageX - t.$arena.offset().left;
       t.setLocalAngle();
     });
@@ -135,7 +137,7 @@ Game.prototype = {
   },
 
   removePlayer: function(playerName){
-    debug(`localGame: remove player ${playerName}`)
+    debug(`localGame: remove player ${playerName}`);
     let deadFinger = Fingers.getFingerByName(playerName);
     if(deadFinger) {
       deadFinger.reset();
@@ -211,34 +213,19 @@ Game.prototype = {
   }
 };
 
-function Turtle({id, x, y, hp}){
+function Turtle({id, x, y}){
   this.id = id;
   this.body = null;
-  this.speed = 5;
-  this.w = 60;
-  this.h = 80;
   this.baseAngle = 90;
   this.x = x;
   this.y = y;
-  this.hp = hp;
-  this.dead = false;
-  this.$info = null;
   this.materialize();
 }
 
 Turtle.prototype = {
-
   materialize: function(){
     localGame.$arena.append('<div id="' + this.id + '" class="turtle turtle1"></div>');
     this.$body = $('#' + this.id);
-    // this.$body.css('width', this.w);
-    // this.$body.css('height', this.h);
-
-    localGame.$arena.append('<div id="info-' + this.id + '" class="info"></div>');
-    this.$info = $('#info-' + this.id);
-    this.$info.append('<div class="label">' + this.id + '</div>');
-    this.$info.append('<div class="hp-bar"></div>');
-
     this.refresh();
   },
 
@@ -255,12 +242,6 @@ Turtle.prototype = {
     this.$body.css('-moz-transform', 'rotateZ(' + this.baseAngle + 'deg)');
     this.$body.css('-o-transform', 'rotateZ(' + this.baseAngle + 'deg)');
     this.$body.css('transform', 'rotateZ(' + this.baseAngle + 'deg)');
-
-    // this.$info.css('left', (this.x) + 'px');
-    // this.$info.css('top', (this.y) + 'px');
-
-    // this.$info.find('.hp-bar').css('width', this.hp + 'px');
-    // this.$info.find('.hp-bar').css('background-color', getGreenToRed(this.hp));
   }
 
 };
@@ -270,12 +251,6 @@ function debug(msg){
     console.log(msg);
   }
 }
-
-// function getGreenToRed(percent){
-//   let r = percent<50 ? 255 : Math.floor(255-(percent*2-100)*255/100);
-//   let g = percent>50 ? 255 : Math.floor((percent*2)*255/100);
-//   return 'rgb('+r+','+g+',0)';
-// }
 
 function scale(input, domain, range) {
   let clamped = input <= domain[0] ? domain[0] : input >= domain[1] ? domain[1] : input;

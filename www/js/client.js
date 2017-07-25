@@ -1,4 +1,6 @@
-/* global io, Game, [TODO] $ */
+/* global io, Game, $ */
+'use strict';
+
 let hostName = window.location.hostname;
 let socket = io.connect(hostName);
 let localGame = new Game('main-turtle', socket);
@@ -9,7 +11,6 @@ socket.on('addPlayer', function(finger){
 });
 
 socket.on('removeFinger', function(fingerName){
-  console.log(`remove ${fingerName}`);
   localGame.removePlayer(fingerName);
 });
 

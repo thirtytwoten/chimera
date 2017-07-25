@@ -1,4 +1,6 @@
-/* global io, Game, [TODO] $ */
+/* global $, socket */
+'use strict';
+
 let playerName = '';
 
 $(document).ready( function(){
@@ -23,7 +25,7 @@ $(window).on('beforeunload', function(){
 });
 
 function joinGame(playerName, socket){
-  if(playerName != ''){
+  if(playerName !== ''){
     $('#prompt').hide();
     socket.emit('joinGame', {playerName});
   }
