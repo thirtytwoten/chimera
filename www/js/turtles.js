@@ -17,6 +17,12 @@ function Finger({
   this.isLocal = isLocal;
   this.id = 'fin-' + this.position;
   this.cssDegOffset = this.calcDegreeOffset();
+  this.defaults = {
+    playerName: '',
+    angle: 0,
+    occupied: false,
+    isLocal: false
+  };
 }
 
 Finger.prototype = {
@@ -25,6 +31,9 @@ Finger.prototype = {
   },
   calcDegreeOffset: function() {
     return this.position.includes('right') ? 180 : 0;
+  },
+  reset: function(){
+    Object.assign(this,this.defaults);
   },
   slim: function(){
     return {
@@ -36,10 +45,20 @@ Finger.prototype = {
 };
 
 let Fingers = [];
+Fingers.init = function(){
+  for (let i in POSITIONS){
+    Fingers.push(new Finger({position: POSITIONS[i]}));
+  }
+};
 Fingers.getFingerAtPosition = function(strOrIndex){
   let index = Number.isInteger(strOrIndex) ? strOrIndex : POSITIONS.indexOf(strOrIndex);
   return (index >= 0 && index < POSITIONS.length) ? this[index] : null;
 };
+Fingers.getFingerByName = function(playerName) {
+  return this.find(function(finger){
+    return finger.playerName = playerName;
+  });
+},
 Fingers.getOpenFinger = function() {
   return this.find(function(finger){
     return !finger.occupied;
@@ -75,9 +94,7 @@ function Game(turtleId, socket){
 Game.prototype = {
 
   init: function(serverData){
-    for (let i in POSITIONS){
-      Fingers.push(new Finger({position: POSITIONS[i]}));
-    }
+    Fingers.init();
     this.buildPool(serverData.arena);
     this.turtle = new Turtle(serverData.turtle);
     this.setControls();
@@ -114,6 +131,16 @@ Game.prototype = {
       } else {
         this.update = false;
       }
+    }
+  },
+
+  removePlayer: function(playerName){
+    debug(`localGame: remove player ${playerName}`)
+    let deadFinger = Fingers.getFingerByName(playerName);
+    if(deadFinger) {
+      deadFinger.reset();
+    } else {
+      debug(`${playerName} not found to remove`);
     }
   },
 
@@ -214,11 +241,9 @@ Turtle.prototype = {
   },
 
   addFin: function(finger) {
-    this.$body.append(`<div id="${finger.id}" class="fin"></div>`);
-  },
-
-  removeFin: function(finger) {
-    // TODO
+    if(this.$body.find(`#${finger.id}`).length < 1){
+      this.$body.append(`<div id="${finger.id}" class="fin"></div>`);
+    }
   },
 
   refresh: function(){
