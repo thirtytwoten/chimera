@@ -1,215 +1,145 @@
-/* global $, localGame*/
+/* global $, localGame */
 'use strict';
 
 const DEBUG = true;
 const INTERVAL = 50;
-const POSITIONS = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
 
-function Finger({
-  playerName = '',
-  position = '',
-  angle = 0,
-  occupied = false,
-  isLocal = false
-}){
-  this.playerName = playerName;
+let GameViewElementFns = {
+  getDomElement: function(){ return $('#' + this.id) },
+  show: function(){ this.getDomElement().css('visibility','visible') },
+  hide: function(){ this.getDomElement().css('visibility','hidden') },
+  rotate: function(deg){
+    this.getDomElement()
+        .css('-webkit-transform', 'rotateZ(' + deg + 'deg)')
+        .css('-moz-transform', 'rotateZ(' + deg + 'deg)')
+        .css('-o-transform', 'rotateZ(' + deg + 'deg)')
+        .css('transform', 'rotateZ(' + deg + 'deg)');
+  }
+};
+
+function Player(name, position){
+  this.name = name;
   this.position = position;
-  this.angle = angle;
-  this.occupied = occupied;
-  this.isLocal = isLocal;
-  this.id = 'fin-' + this.position;
-  this.cssDegOffset = this.calcDegreeOffset();
-  this.defaults = {
-    playerName: '',
-    angle: 0,
-    occupied: false,
-    isLocal: false
-  };
+  this.angle = 0;
+  this.id = 'big-fin';
+  //this.littleFinger = null;
 }
-
-Finger.prototype = {
-  getDomElement: function(){
-    return $(this.id);
+Player.prototype = {
+  refresh: function() {
+    this.rotate(this.angle);
   },
-  calcDegreeOffset: function() {
-    return this.position.includes('right') ? 180 : 0;
-  },
-  reset: function(){
-    Object.assign(this,this.defaults);
-  },
-  slim: function(){
+  dataPacket: function(){
     return {
-      playerName: this.playerName,
+      playerName: this.name,
       position: this.position,
       angle: this.angle
     };
   }
-};
+}
+Object.assign(Player.prototype, GameViewElementFns);
 
-let Fingers = [];
-Fingers.init = function(){
-  for (let i in POSITIONS){
-    Fingers.push(new Finger({position: POSITIONS[i]}));
+function Finger(position){
+  this.position = position;
+  this.angle = 0;
+  this.occupied = false;
+  this.isLocal = false;
+  this.id = 'fin-' + this.position;  // TODO make as general (!id) selectors for when there's going to be two turtles
+  this.cssDegOffset = this.position.includes('right') ? 180 : 0;
+}
+Finger.prototype = {
+  reset: function(){
+    this.angle = 0;
+    this.occupied = false;
+    this.isLocal = false;
   }
 };
-Fingers.getFingerAtPosition = function(strOrIndex){
-  let index = Number.isInteger(strOrIndex) ? strOrIndex : POSITIONS.indexOf(strOrIndex);
-  return (index >= 0 && index < POSITIONS.length) ? this[index] : null;
-};
-Fingers.getFingerByName = function(playerName) {
-  return this.find(function(finger){
-    return finger.playerName == playerName;
-  });
-};
-Fingers.getOpenFinger = function() {
-  return this.find(function(finger){
-    return !finger.occupied;
-  });
-};
-Fingers.occupied = function() {
-  return this.filter(function(finger){
-    return finger.occupied;
-  });
-};
-Fingers.bigFinger = {
-  angle: 0,
-  id: 'big-fin',
-  cssDegOffset: 0,
-  show: function(){
-    $('#'+this.id).css('visibility', 'visible');
-  }
-};
+Object.assign(Finger.prototype, GameViewElementFns);
 
 function Game(turtleId, socket){
-  this.update = false;
-  this.width = 0;
-  this.height = 0;
-  this.mx = 0;
-  this.$arena = null;
-  this.localFinger = null;
-  this.bigFinger = Fingers.bigFinger;
+  this.width = null;
+  this.height = null;
+  this.player = null;
   this.turtle = null;
   this.socket = socket;
-  this.localAngle = 0;
+  this.$arena = null;
+  this.update = false;
+  this.mx = 0;
 }
-
 Game.prototype = {
-
   init: function(serverData){
-    Fingers.init();
-    this.buildPool(serverData.arena);
+    this.$arena = this.buildPool(serverData.arena);
     this.turtle = new Turtle(serverData.turtle);
+    this.turtle.materialize(this.$arena);
     this.setControls();
     setInterval(function(){
       localGame.mainLoop();
     }, INTERVAL);
   },
 
-  buildPool: function(arena) {
-    this.width = arena.width;
-    this.height = arena.height;
-    this.$arena = $('#'+arena.id);
-    this.$arena.css('width', arena.width);
-    this.$arena.css('height', arena.height);
-  },
-
-  setControls: function(){
-    var t = this;
-    $(document).mousemove( function(e){
-      t.mx = e.pageX - t.$arena.offset().left;
-      t.setLocalAngle();
-    });
-  },
-
-  setLocalAngle: function(){
-    let domain = [0, this.width];
-    let range = [-80, 80];
-    if(this.localFinger){
-      this.localAngle = scale(this.mx, domain, range);
-      if(this.localAngle != this.localFinger.angle){
-        this.localFinger.angle = this.localAngle;
-        this.bigFinger.angle = this.localAngle;
-        this.update = true;
-      } else {
-        this.update = false;
-      }
-    }
-  },
-
-  removePlayer: function(playerName){
-    debug(`localGame: remove player ${playerName}`);
-    let deadFinger = Fingers.getFingerByName(playerName);
-    if(deadFinger) {
-      deadFinger.reset();
-    } else {
-      debug(`${playerName} not found to remove`);
-    }
-  },
-
-  addPlayer: function(playerName, isLocal){
-    //would I ever need to do anything if !local?
-    if(isLocal){
-      let newFinger = Object.assign(Fingers.getOpenFinger(), {playerName, isLocal, occupied: true});
-      this.turtle.addFin(newFinger);
-      this.localFinger = newFinger;
-      let filter = $(`#${newFinger.id}`).css("filter");
-      $(`#big-fin`).css("filter", filter);
-      this.bigFinger.show();
-    }
-  },
-
   mainLoop: function(){
     if(this.update){
-      this.update = false;
-      //send data to server about local finger
       this.sendData();
+      this.update = false;
     }
-    this.refresh();
+    this.turtle.refresh();
   },
 
   sendData: function(){
-    //Send local data to server
     var gameData = {};
-    gameData.finger = this.localFinger.slim();
-    //gameData.turtle = this.turtle;
+    gameData.finger = this.player.dataPacket();
     this.socket.emit('sync', gameData);
   },
 
   receiveData: function(serverData, init){
-    if(init){
-      this.init(serverData);
-    }
+    if(init){ this.init(serverData) }
     Object.assign(this.turtle, serverData.turtle);
-    serverData.fingers.forEach(function(serverFinger){
-      let clientFinger = Fingers.getFingerAtPosition(serverFinger.position);
-      Object.assign(clientFinger, serverFinger);
-      if(!clientFinger.occupied){
-        clientFinger.occupied = true;
-        localGame.turtle.addFin(clientFinger);
+    serverData.fingers.forEach(function(serverFin){
+      let clientFin = localGame.turtle.getFinAtPosition(serverFin.position);
+      Object.assign(clientFin, serverFin);
+      if(!clientFin.occupied){
+        clientFin.occupied = true;
+        clientFin.show();
       }
     });
   },
 
-  refresh: function() {
-    this.turtle.refresh();
-    this.refreshFingers();
+  buildPool: function(arena) {
+    this.width = arena.width;
+    this.height = arena.height;
+    return $('#' + arena.id)
+      .css('width', arena.width)
+      .css('height', arena.height); 
   },
 
-  refreshFingers: function() {
-    let drawnFingers = Fingers.occupied();
-    drawnFingers.push(this.bigFinger);
-    drawnFingers.forEach(function(finger){
-      let $fin = $('#' + finger.id);
-      if($fin.length > 0){
-        let deg = finger.angle + finger.cssDegOffset;
-        $fin.css('-webkit-transform', 'rotateZ(' + deg + 'deg)');
-        $fin.css('-moz-transform', 'rotateZ(' + deg + 'deg)');
-        $fin.css('-o-transform', 'rotateZ(' + deg + 'deg)');
-        $fin.css('transform', 'rotateZ(' + deg + 'deg)');
-      } else {
-        debug(finger);
-      }
+  setControls: function(){
+    $(document).mousemove( function(e){
+      localGame.updateLocalAngle(e.pageX - localGame.$arena.offset().left);
     });
+  },
+  //move to player
+  updateLocalAngle: function(newMx){
+    if (newMx !== this.mx) {
+      this.mx = newMx
+      if(this.player){
+        let domain = [0, this.width];
+        let range = [-80, 80];
+        let newAngle = scale(this.mx, domain, range);
+        this.update = this.player.angle !== newAngle;
+        this.player.angle = newAngle;
+        this.player.refresh();
+      }
+    }
+  },
+
+  addPlayer: function(playerName, isLocal){
+    if(isLocal){
+      let newFin = this.turtle.getOpenFin();
+      this.player = new Player(playerName, newFin.position); //maybe server should assign position
+      // TODO fix this
+      let filter = newFin.getDomElement().css("filter"); //
+      $(`#big-fin`).css("filter", filter);
+      this.player.show();
+    }
   }
 };
 
@@ -219,32 +149,55 @@ function Turtle({id, x, y}){
   this.baseAngle = 90;
   this.x = x;
   this.y = y;
-  this.materialize();
+  this.FIN_POSITIONS = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+  this.fins = this.stubFins();
 }
-
 Turtle.prototype = {
-  materialize: function(){
-    localGame.$arena.append('<div id="' + this.id + '" class="turtle turtle1"></div>');
-    this.$body = $('#' + this.id);
+  materialize: function($pool){
+    $pool.append('<div id="' + this.id + '" class="turtle turtle1"></div>');
+    let $turtle = localGame.turtle.getDomElement();
+    this.fins.forEach(function(f){
+      $turtle.append(`<div id="${f.id}" class="fin"></div>`);
+      f.hide();
+    });
     this.refresh();
   },
 
-  addFin: function(finger) {
-    if(this.$body.find(`#${finger.id}`).length < 1){
-      this.$body.append(`<div id="${finger.id}" class="fin"></div>`);
-    }
+  refresh: function(){
+    this.getDomElement()
+      .css('left', this.x + 'px')
+      .css('top', this.y + 'px');
+    this.rotate(this.baseAngle);
+    this.occupiedFins().forEach(function(f){ f.rotate(f.angle + f.cssDegOffset) });
   },
 
-  refresh: function(){
-    this.$body.css('left', this.x + 'px');
-    this.$body.css('top', this.y + 'px');
-    this.$body.css('-webkit-transform', 'rotateZ(' + this.baseAngle + 'deg)');
-    this.$body.css('-moz-transform', 'rotateZ(' + this.baseAngle + 'deg)');
-    this.$body.css('-o-transform', 'rotateZ(' + this.baseAngle + 'deg)');
-    this.$body.css('transform', 'rotateZ(' + this.baseAngle + 'deg)');
+  stubFins: function(){
+    return this.FIN_POSITIONS.map(function(p){
+      return (new Finger(p));
+    });
+  },
+
+  getFinAtPosition: function(strOrIndex){
+    let index = Number.isInteger(strOrIndex) ? strOrIndex : this.FIN_POSITIONS.indexOf(strOrIndex);
+    return (index >= 0 && index < this.FIN_POSITIONS.length) ? this.fins[index] : null;
+  },
+
+  getFinById: function(id) {
+    return this.fins.find(function(fin){ return fin.id === id });
+  },
+
+  getOpenFin: function() {
+    return this.fins.find(function(fin){ return !fin.occupied });
+  },
+
+  occupiedFins: function() {
+    return this.fins.filter(function(fin){ return fin.occupied });
   }
 
 };
+Object.assign(Turtle.prototype, GameViewElementFns);
+
+////// helpers
 
 function debug(msg){
   if(DEBUG){

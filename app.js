@@ -1,3 +1,5 @@
+'use strict'
+
 let express = require('express');
 let app = express();
 
@@ -34,8 +36,7 @@ function GameServer(){
     baseAngle: 0,
     moveAngle: 0,
     moveX: 0,
-    moveY: 0,
-    hp: 100,
+    moveY: 0
   };
   this.moving = false;
   this.interval = null;
@@ -53,7 +54,6 @@ GameServer.prototype = {
     this.interval = setInterval(function(){
       game.calcMovement();
       game.moveTurtle();
-      //console.log(++game.counter);
     }, game.arena.updateRate);
   },
 
@@ -119,12 +119,6 @@ GameServer.prototype = {
     gameData.turtle = this.turtle;
     gameData.arena = this.arena;
     return gameData;
-  },
-
-  cleanDeadTurtles: function(){
-    this.turtles = this.turtles.filter(function(t){
-      return t.hp > 0;
-    });
   }
 
 };
@@ -136,25 +130,25 @@ var game = new GameServer();
 io.on('connection', function(client) {
   console.log('User connected');
 
-  let syncRate = 100; //game.arena.updateRate;
+  let syncRate = 100;
   setInterval(function(){
-    client.emit('sync', game.getData());
-    client.broadcast.emit('sync', game.getData());
-    //console.log(++game.counter);
+    let gameData = game.getData()
+    client.emit('sync', gameData);
+    client.broadcast.emit('sync', gameData);
   }, syncRate);
 
-  //sync existing information to client
+  //send existing information out to client
   client.emit('sync', game.getData());
 
   client.on('joinGame', function(finger){
     console.log(finger.playerName + ' joined the game');
-    client.emit('addPlayer', { playerName: finger.playerName, isLocal: true } );
+    client.emit('addPlayer', { playerName: finger.playerName, isLocal: true } ); //// client can just call this?
     //client.broadcast.emit('addPlayer', { playerName: finger.playerName, isLocal: false } );
     //^should be picked up in sync calls
   });
 
   client.on('sync', function(data){
-    if(data.finger !== undefined){
+    if(data.finger){
       game.syncFinger(data.finger);
       //Broadcast data to clients
       // client.emit('sync', game.getData());
@@ -165,7 +159,7 @@ io.on('connection', function(client) {
   client.on('leaveGame', function(fingerName){
     console.log(fingerName + ' has left the game');
     game.removeFinger(fingerName);
-    client.broadcast.emit('removeFinger', fingerName);
+    //client.broadcast.emit('removeFinger', fingerName); // should automatically be removed when it is not in the sync data
   });
 
 });

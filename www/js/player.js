@@ -4,7 +4,7 @@
 let playerName = '';
 
 $(document).ready( function(){
-
+  
   $('#join').click( function(){
     playerName = $('#player-name').val();
     joinGame(playerName, socket);

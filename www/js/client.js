@@ -16,8 +16,7 @@ socket.on('removeFinger', function(fingerName){
 
 socket.on('sync', function(gameServerData){
   localGame.receiveData(gameServerData, !serverPing);
-  if(!serverPing){
-    //first contact
+  if(!serverPing){ // first contact
     $('.btn#join').prop('disabled', false);
     serverPing = true;
   }
