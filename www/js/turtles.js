@@ -22,6 +22,7 @@ function Player(name, position){
   this.position = position;
   this.angle = 0;
   this.id = 'big-fin';
+  //this.occupied = true; // just to help set the server finger
   //this.littleFinger = null;
 }
 Player.prototype = {
@@ -31,6 +32,7 @@ Player.prototype = {
   dataPacket: function(){
     return {
       playerName: this.name,
+      //occupied: this.occupied,
       position: this.position,
       angle: this.angle
     };
@@ -93,13 +95,17 @@ Game.prototype = {
   receiveData: function(serverData, init){
     if(init){ this.init(serverData) }
     Object.assign(this.turtle, serverData.turtle);
+    this.turtle.fins.forEach(function(clientFin){
+      clientFin.hide(); //temporary
+    });
     serverData.fingers.forEach(function(serverFin){
       let clientFin = localGame.turtle.getFinAtPosition(serverFin.position);
       Object.assign(clientFin, serverFin);
       if(!clientFin.occupied){
         clientFin.occupied = true;
-        clientFin.show();
+        //clientFin.show();
       }
+      clientFin.show(); //temporary
     });
   },
 
