@@ -1,5 +1,4 @@
 # chimera
-======
 
 ### Running app locally
 clone or download project and run the following commands within the project directory:  
